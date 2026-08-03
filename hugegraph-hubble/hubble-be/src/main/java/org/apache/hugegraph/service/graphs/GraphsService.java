@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -453,7 +454,8 @@ public class GraphsService {
                                                String graphSpace,
                                                String graph) {
         GraphStatisticsEntity result;
-        this.graphStatistics.clear();
+        // Only invalidate the cache entry of the current graph
+        this.graphStatistics.remove(getStatisticsKey(graphSpace, graph));
         result = postSmallStatistics(client, graphSpace, graph);
 
         return result;
@@ -480,9 +482,9 @@ public class GraphsService {
                     return;
                 }
             }
-            List<String> idPairs = new ArrayList<>();
+            List<String> idPairs = new CopyOnWriteArrayList<>();
             idPairs.add(idPair);
-            Map<String, Object> graphCache = new HashMap<>(2);
+            Map<String, Object> graphCache = new ConcurrentHashMap<>(2);
             graphCache.put(RUNNING_TASKS, idPairs);
             graphCache.put(STATISTICS, GraphStatisticsEntity.emptyEntity());
             this.graphStatistics.put(graphKey, graphCache);
@@ -525,6 +527,10 @@ public class GraphsService {
                 String[] idVE = idPair.split("-");
                 Task taskV = taskMap.get(idVE[0]);
                 Task taskE = taskMap.get(idVE[1]);
+                if (taskV == null || taskE == null) {
+                    // Task info is missing, skip this id pair
+                    continue;
+                }
                 boolean success = taskV.success() && taskE.success();
                 if (removable(taskV) || removable(taskE) || success) {
                     removeIds.add(idPair);
