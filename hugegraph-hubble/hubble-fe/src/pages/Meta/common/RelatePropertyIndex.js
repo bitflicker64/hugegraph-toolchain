@@ -22,19 +22,21 @@ import {useTranslation} from 'react-i18next';
 import {FormListAdd, FormListRemove} from '../../../components/FormListAction';
 import {indexTypeOptions} from './config';
 
-const IndexTypeSelect = ({index, onChange}) => {
-    const handleChange = useCallback(value => onChange(index, value), [index, onChange]);
-    return <Select options={indexTypeOptions} onChange={handleChange} />;
+const IndexTypeSelect = ({index, value, onChange, onTypeChange}) => {
+    const handleChange = useCallback(next => {
+        onChange?.(next);
+        onTypeChange?.(index, next);
+    }, [index, onChange, onTypeChange]);
+
+    return <Select options={indexTypeOptions} value={value} onChange={handleChange} />;
 };
 
-const PropertyFieldsSelect = ({options, type}) => {
-    const handleChange = useCallback(value => {
-        if (type !== 'SECONDARY' && value?.length > 1) {
-            value.shift();
-        }
-    }, [type]);
+const PropertyFieldsSelect = ({options, type, value, onChange}) => {
+    const handleChange = useCallback(next => {
+        onChange?.(type !== 'SECONDARY' && next?.length > 1 ? next.slice(-1) : next);
+    }, [onChange, type]);
 
-    return <Select options={options} mode='multiple' onChange={handleChange} />;
+    return <Select options={options} mode='multiple' value={value} onChange={handleChange} />;
 };
 
 const ExistingIndexRemove = ({
@@ -180,7 +182,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                             className="form_attr_select"
                                             name={[field.name, 'type']}
                                         >
-                                            <IndexTypeSelect index={index} onChange={setPropertyList} />
+                                            <IndexTypeSelect index={index} onTypeChange={setPropertyList} />
                                         </Form.Item>
                                         <Form.Item
                                             className="form_attr_select"
@@ -229,7 +231,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                         className="form_attr_select"
                                         name={[field.name, 'type']}
                                     >
-                                        <IndexTypeSelect index={index} onChange={setPropertyList} />
+                                        <IndexTypeSelect index={index} onTypeChange={setPropertyList} />
                                     </Form.Item>
                                     <Form.Item
                                         className="form_attr_select"
