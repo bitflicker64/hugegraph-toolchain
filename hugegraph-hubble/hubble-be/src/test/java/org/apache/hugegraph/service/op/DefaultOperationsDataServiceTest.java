@@ -75,10 +75,33 @@ public class DefaultOperationsDataServiceTest {
 
         Map<String, Object> result = service.nodes(client, capabilities,
                                                    "STORE", "UP", "store",
-                                                   1, 1, "name", "asc");
+                                                   1, 1, "name", "asc", false);
 
         Assert.assertEquals(2, result.get("total"));
         Assert.assertEquals(1, ((java.util.List<?>) result.get("items")).size());
+    }
+
+    @Test
+    public void testNodeListRefreshBypassesTheSnapshotCache() {
+        AtomicInteger calls = new AtomicInteger();
+        OperationsCollector collector = (client, metrics) -> {
+            calls.incrementAndGet();
+            return snapshot();
+        };
+        DefaultOperationsDataService service = new DefaultOperationsDataService(
+                collector, 5, CLOCK);
+        Set<String> capabilities = Set.of(
+                OperationsCapabilityService.HEALTH_READ,
+                OperationsCapabilityService.TOPOLOGY_READ);
+
+        service.nodes(client("token-a"), capabilities, null, null, null,
+                      1, 20, "name", "asc", false);
+        service.nodes(client("token-a"), capabilities, null, null, null,
+                      1, 20, "name", "asc", false);
+        service.nodes(client("token-a"), capabilities, null, null, null,
+                      1, 20, "name", "asc", true);
+
+        Assert.assertEquals(2, calls.get());
     }
 
     @Test
@@ -90,10 +113,10 @@ public class DefaultOperationsDataServiceTest {
 
         Map<String, Object> first = service.nodes(client("token-a"), capabilities,
                                                   null, null, null, 1, 1,
-                                                  "name", "desc");
+                                                  "name", "desc", false);
         Map<String, Object> second = service.nodes(client("token-a"), capabilities,
                                                    null, null, null, 2, 1,
-                                                   "name", "desc");
+                                                   "name", "desc", false);
 
         @SuppressWarnings("unchecked")
         java.util.List<Node> firstItems =

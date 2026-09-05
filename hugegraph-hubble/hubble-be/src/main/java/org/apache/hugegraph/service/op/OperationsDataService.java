@@ -31,7 +31,7 @@ public interface OperationsDataService {
     Map<String, Object> nodes(HugeClient client, Set<String> capabilities,
                               String type, String status, String query,
                               int page, int pageSize, String sort,
-                              String order);
+                              String order, boolean refresh);
 
     Map<String, Object> node(HugeClient client, Set<String> capabilities,
                              String nodeId, boolean refresh);

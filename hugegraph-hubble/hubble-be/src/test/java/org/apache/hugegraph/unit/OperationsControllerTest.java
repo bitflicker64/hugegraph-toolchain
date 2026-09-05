@@ -65,7 +65,7 @@ public class OperationsControllerTest {
     @Test(expected = ForbiddenException.class)
     public void testSpaceAdminCannotReadNodeTopology() {
         fixture("SPACEADMIN").controller.nodes(null, null, null, 1, 20,
-                                                "name", "asc");
+                                                "name", "asc", false);
     }
 
     @Test
@@ -75,14 +75,34 @@ public class OperationsControllerTest {
                                                 Mockito.isNull(), Mockito.isNull(),
                                                 Mockito.isNull(), Mockito.eq(1),
                                                 Mockito.eq(20), Mockito.eq("name"),
-                                                Mockito.eq("asc")))
+                                                Mockito.eq("asc"),
+                                                Mockito.eq(false)))
                .thenReturn(Collections.singletonMap("total", 0));
 
         Map<String, Object> response = fixture.controller.nodes(null, null, null,
                                                                  1, 20,
-                                                                 "name", "asc");
+                                                                 "name", "asc",
+                                                                 false);
 
         Assert.assertEquals(0, response.get("total"));
+    }
+
+    @Test
+    public void testNodeListRefreshIsThreadedToTheDataService() {
+        Fixture fixture = fixture("ADMIN");
+
+        fixture.controller.nodes(null, null, null, 1, 20, "name", "asc", true);
+
+        Mockito.verify(fixture.dataService).nodes(Mockito.any(),
+                                                   Mockito.anySet(),
+                                                   Mockito.isNull(),
+                                                   Mockito.isNull(),
+                                                   Mockito.isNull(),
+                                                   Mockito.eq(1),
+                                                   Mockito.eq(20),
+                                                   Mockito.eq("name"),
+                                                   Mockito.eq("asc"),
+                                                   Mockito.eq(true));
     }
 
     @Test

@@ -102,8 +102,8 @@ public class DefaultOperationsDataService implements OperationsDataService {
                                      Set<String> capabilities,
                                      String type, String status, String query,
                                      int page, int pageSize, String sort,
-                                     String order) {
-        Snapshot snapshot = this.snapshot(client, capabilities, false);
+                                     String order, boolean refresh) {
+        Snapshot snapshot = this.snapshot(client, capabilities, refresh);
         String normalizedType = normalize(type);
         String normalizedStatus = normalize(status);
         String normalizedQuery = normalize(query);

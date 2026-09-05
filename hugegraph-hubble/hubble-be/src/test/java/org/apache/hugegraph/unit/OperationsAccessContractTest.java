@@ -173,7 +173,7 @@ public class OperationsAccessContractTest {
         Mockito.when(data.nodes(Mockito.any(), Mockito.anySet(), Mockito.any(),
                                 Mockito.any(), Mockito.any(), Mockito.anyInt(),
                                 Mockito.anyInt(), Mockito.anyString(),
-                                Mockito.anyString()))
+                                Mockito.anyString(), Mockito.anyBoolean()))
                .thenReturn(Collections.singletonMap("nodes",
                            Collections.emptyList()));
         Mockito.when(data.node(Mockito.any(), Mockito.anySet(),
