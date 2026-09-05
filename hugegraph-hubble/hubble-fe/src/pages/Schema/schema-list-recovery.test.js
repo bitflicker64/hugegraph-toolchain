@@ -555,3 +555,30 @@ it('hides graph-space A identity and rows while graph-space B is pending', async
     });
     await waitForLoadingToFinish();
 });
+
+it('returns to the previous page when the last page of templates empties', async () => {
+    api.manage.getGraphSpace.mockResolvedValue({status: 200, data: {nickname: 'Space'}});
+    const firstPage = Array.from({length: 10}, (unused, index) => ({
+        name: `tpl_${index + 1}`, creator: 'alice',
+    }));
+    let listTotal = 11;
+    api.manage.getSchemaList.mockImplementation((space, {page_no}) => {
+        if (page_no === 2) {
+            listTotal = 10;
+            return Promise.resolve({status: 200, data: {records: [], total: listTotal}});
+        }
+
+        return Promise.resolve({status: 200, data: {records: firstPage, total: listTotal}});
+    });
+
+    render(<Schema />);
+
+    expect(await screen.findByText('tpl_1')).toBeInTheDocument();
+    fireEvent.click(document.querySelector('.ant-pagination-item-2'));
+
+    await waitFor(() => expect(api.manage.getSchemaList).toHaveBeenLastCalledWith(
+        'SPACE', {query: '', page_no: 1}, expect.any(Object)
+    ));
+    expect(await screen.findByText('tpl_1')).toBeInTheDocument();
+    expect(document.querySelector('.ant-pagination-item-2')).toBeNull();
+});

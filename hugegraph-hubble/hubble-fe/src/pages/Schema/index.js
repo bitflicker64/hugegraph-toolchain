@@ -121,7 +121,7 @@ const Schema = () => {
         ? `/graphspace/${encodeURIComponent(graphspace)}`
             + `/graph/${encodeURIComponent(currentGraph)}/meta`
         : `/graphspace/${encodeURIComponent(graphspace)}`;
-    const {current} = pagination;
+    const {current, pageSize} = pagination;
     const listKey = JSON.stringify([graphspace, query, current]);
 
     const canEditTemplate = useCallback(row => (
@@ -302,6 +302,14 @@ const Schema = () => {
                 return;
             }
             if (res.status === 200) {
+                const lastPage = Math.max(1, Math.ceil(res.data.total / pageSize));
+                if (res.data.records.length === 0 && res.data.total > 0
+                    && current > lastPage) {
+                    setPagination(value => ({
+                        ...value, current: lastPage, total: res.data.total,
+                    }));
+                    return;
+                }
                 setData(res.data.records);
                 setListDataKey(listKey);
                 setPagination(value => ({...value, total: res.data.total}));
@@ -327,7 +335,7 @@ const Schema = () => {
                 listRequest.current = null;
             }
         };
-    }, [graphspace, refresh, listRetry, current, query, listKey]);
+    }, [graphspace, refresh, listRetry, current, pageSize, query, listKey]);
 
     const visibleGraphspaceInfo = graphspaceDataKey === graphspace
         ? graphspaceInfo
