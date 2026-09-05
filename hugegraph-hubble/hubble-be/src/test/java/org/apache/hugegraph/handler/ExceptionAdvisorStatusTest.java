@@ -220,6 +220,28 @@ public class ExceptionAdvisorStatusTest {
         Assert.assertFalse(response.getMessage().contains("/Users/operator"));
     }
 
+    @Test
+    public void testParserDiagnosticKeepsTheOffendingToken() {
+        String parseError = "startup failed:\n" +
+                "Script26.groovy: 1: unexpected token: ( @ line 1, column 5.\n" +
+                "   g.V((\n       ^\n\n1 error\n";
+
+        Assert.assertEquals(parseError,
+                            ExceptionAdvisor.sanitize(parseError));
+    }
+
+    @Test
+    public void testDiagnosticStillRedactsKeyValueSecrets() {
+        String diagnostic = ExceptionAdvisor.sanitize(
+                "load failed\ntoken: token-canary\n" +
+                "password: password-canary\ncredential=credential-canary");
+
+        Assert.assertFalse(diagnostic.contains("token-canary"));
+        Assert.assertFalse(diagnostic.contains("password-canary"));
+        Assert.assertFalse(diagnostic.contains("credential-canary"));
+        Assert.assertTrue(diagnostic.contains("[REDACTED]"));
+    }
+
     private static void operationsRequest() {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(
                 new MockHttpServletRequest("GET", "/api/v1.3/operations/nodes")));

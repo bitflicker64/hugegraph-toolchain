@@ -279,6 +279,13 @@ public class ExceptionAdvisor {
             "(?:token|password|secret(?:[_-]?key)?|api[_-]?key|" +
             "client[_-]?secret|service[_-]?secret|private[_-]?key|" +
             "credential|endpoint)";
+    /*
+     * A sensitive key only names a field when it starts one: at the beginning
+     * of the message, on its own line, or after a delimiter. A key that merely
+     * ends an English sentence is prose, see KEY_VALUE_SECRET.
+     */
+    private static final String FIELD_START =
+            "(?<![A-Za-z])(?<![A-Za-z][ \\t])";
     private static final Pattern SECRET_PARAMETER = Pattern.compile(
             "(?i)([?&\\s]" + SENSITIVE_KEY + "=)[^&\\s]+",
             Pattern.CASE_INSENSITIVE);
@@ -289,8 +296,16 @@ public class ExceptionAdvisor {
             "(?i)([\"']" + SENSITIVE_KEY + "[\"']" +
             "\\s*:\\s*[\"'])[^\"']*([\"'])",
             Pattern.CASE_INSENSITIVE);
+    /*
+     * "key=value" is never prose, so it is always redacted. "key: value" is
+     * only a secret when the key starts a field, because parser diagnostics
+     * end their sentences with the very same words: redacting the value out
+     * of "unexpected token: ( @ line 1, column 5." hides the one part of a
+     * Gremlin syntax error the user needs to read.
+     */
     private static final Pattern KEY_VALUE_SECRET = Pattern.compile(
-            "(?i)((?:" + SENSITIVE_KEY + ")\\s*[:=]\\s*)" +
+            "(?i)((?:" + SENSITIVE_KEY + ")\\s*=\\s*|" +
+            FIELD_START + "(?:" + SENSITIVE_KEY + ")\\s*:\\s*)" +
             "(?:\"[^\"]*\"|'[^']*'|[^\\s,;}&]+)",
             Pattern.CASE_INSENSITIVE);
     private static final Pattern NETWORK_ENDPOINT = Pattern.compile(
