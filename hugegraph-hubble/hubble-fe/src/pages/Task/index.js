@@ -20,6 +20,7 @@ import {
     Button,
     Row,
     Col,
+    Empty,
     PageHeader,
     Input,
     Modal,
@@ -52,7 +53,7 @@ import {sourceType, syncType} from './config';
 import TableHeader from '../../components/TableHeader';
 import DataPreparationNav from '../../components/DataPreparationNav';
 import {readWorkbenchGraphContext} from '../../utils/workbenchGraphContext';
-import {isTaskInProgress, TaskStatus} from './status';
+import {getTaskStatus, isTaskInProgress, TaskStatus} from './status';
 
 const {Text} = Typography;
 
@@ -431,6 +432,11 @@ const Task = () => {
             className: style.no_wrap,
             width: TASK_COLUMN_WIDTHS.created,
             ellipsis: true,
+            // `tasks/list` takes no ordering parameter, so this orders the page that
+            // is loaded. The page-size control below is what makes that the whole
+            // list when the user wants it.
+            sorter: (a, b) => String(a.create_time ?? '')
+                .localeCompare(String(b.create_time ?? '')),
         },
         ...(hasCreator ? [{
             title: t('task.col.creator'),
@@ -446,6 +452,10 @@ const Task = () => {
             align: 'center',
             width: TASK_COLUMN_WIDTHS.status,
             render: val => <TaskStatus status={val} />,
+            // Group the rows the user sees by the state they are shown in, rather
+            // than by the raw backend code behind it.
+            sorter: (a, b) => getTaskStatus(a.last_metrics).key
+                .localeCompare(getTaskStatus(b.last_metrics).key),
         },
         {
             title: t('task.col.sync_type'),
@@ -484,6 +494,7 @@ const Task = () => {
         api.manage.getTaskList({
             query: searchName,
             page_no: pagination.current,
+            page_size: pagination.pageSize,
         }).then(res => {
             if (listRequest.current !== token) {
                 return;
@@ -521,7 +532,8 @@ const Task = () => {
             }
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchName, refresh, listRetryToken, listPollToken, pagination.current]);
+    }, [searchName, refresh, listRetryToken, listPollToken,
+        pagination.current, pagination.pageSize]);
 
     useEffect(() => {
         const token = Symbol('task-metrics');
@@ -674,8 +686,22 @@ const Task = () => {
                         rowKey={rowKey}
                         scroll={{x: 'max-content'}}
                         dataSource={data}
-                        pagination={pagination}
+                        pagination={{...pagination, showSizeChanger: true}}
                         onChange={handleTable}
+                        locale={{emptyText: (
+                            <Empty
+                                description={(
+                                    <div>
+                                        <strong>{t('task.edit.workflow_title')}</strong>
+                                        <p>{t('task.edit.workflow_description')}</p>
+                                    </div>
+                                )}
+                            >
+                                <Button type='primary' onClick={handleBack}>
+                                    {t('task.create')}
+                                </Button>
+                            </Empty>
+                        )}}
                     />
                 </Spin>
                 <EditLayer

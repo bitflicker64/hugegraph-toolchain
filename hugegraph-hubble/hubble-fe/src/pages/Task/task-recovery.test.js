@@ -348,3 +348,20 @@ it('localizes common Loader task statuses instead of exposing backend codes', as
     expect(screen.queryByText('SUCCEED')).not.toBeInTheDocument();
     expect(screen.queryByText('UNRECOGNIZED')).not.toBeInTheDocument();
 });
+
+it('explains an empty task list instead of showing a bare no-data table', async () => {
+    api.manage.getTaskList.mockResolvedValue({
+        status: 200,
+        data: {records: [], total: 0, size: 10},
+    });
+    api.manage.getMetricsTask.mockResolvedValue({status: 200, data: {}});
+
+    render(<Task />);
+
+    expect(await screen.findByText('task.edit.workflow_title')).toBeInTheDocument();
+    expect(screen.getByText('task.edit.workflow_description')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', {name: 'Create task'})).toHaveLength(2);
+    expect(api.manage.getTaskList).toHaveBeenCalledWith(
+        expect.objectContaining({page_no: 1, page_size: 10})
+    );
+});

@@ -82,3 +82,13 @@ test('keeps the demo alert text column from collapsing under its button group', 
         /\.demo_alert\s*\{[\s\S]*\.ant-alert-content[\s\S]*flex:\s*1\s+1\s+240px/
     );
 });
+
+test('lets the user order the task list and choose how many rows to load', () => {
+    // `tasks/list` has no ordering parameter, so ordering is applied to the rows
+    // that are loaded and the page size is what decides how many that is.
+    expect(component).toContain('page_size: pagination.pageSize');
+    expect(component).toContain('pagination.current, pagination.pageSize]');
+    expect(component).toContain('showSizeChanger: true');
+    expect(component.match(/\n\s*sorter: \(a, b\) =>/g)?.length).toBe(2);
+    expect(component).toContain('locale={{emptyText: (');
+});

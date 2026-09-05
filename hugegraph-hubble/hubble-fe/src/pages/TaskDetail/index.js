@@ -22,7 +22,7 @@ import {useTranslation} from 'react-i18next';
 import {useNavigate, useParams} from 'react-router-dom';
 import * as api from '../../api';
 import DataPreparationNav from '../../components/DataPreparationNav';
-import {TaskStatus} from '../Task/status';
+import {getTaskStatus, TaskStatus} from '../Task/status';
 import style from './index.module.scss';
 
 const createColumns = t => [
@@ -50,6 +50,8 @@ const createColumns = t => [
         align: 'center',
         width: 180,
         ellipsis: true,
+        sorter: (a, b) => String(a.create_time ?? '')
+            .localeCompare(String(b.create_time ?? '')),
     },
     {
         title: t('task.detail.average_rate'),
@@ -89,6 +91,9 @@ const createColumns = t => [
         align: 'center',
         width: 110,
         render: val => <TaskStatus status={val} />,
+        // Order by the state the user is shown, not by the backend code behind it.
+        sorter: (a, b) => getTaskStatus(a.job_status).key
+            .localeCompare(getTaskStatus(b.job_status).key),
     },
     {
         title: t('task.detail.other'),
