@@ -25,6 +25,22 @@ const {
     ALLPATHS,
 } = ALGORITHM_NAME;
 
+// G6 4.8.25 paints a label exactly as it is given: neither its node/edge labelCfg nor the
+// underlying @antv/g-canvas text shape supports textOverflow, maxWidth or wordWrap. So an
+// unbounded display field is drawn full length, straight across its neighbours, and the
+// only place to bound it is the label string itself.
+const MAX_LABEL_FIELD_LENGTH = 20;
+
+const clampLabelField = value => {
+    if (_.isNil(value)) {
+        return value;
+    }
+    const text = String(value);
+    return text.length > MAX_LABEL_FIELD_LENGTH
+        ? _.truncate(text, {length: MAX_LABEL_FIELD_LENGTH})
+        : value;
+};
+
 /**
  * 基于查询结果和metaData以及设置中的styleData生成GraphData
  * @param {*} queryData
@@ -68,7 +84,7 @@ const formatToGraphData = (queryData, metaData, styleConfig) => {
             metaConfig: _.cloneDeep(metaConfig),
             statistics: {...item.statistics},
             type: customizedType || 'circle',
-            label: display_fields?.map(k => (k === '~id' ? id : item.properties[k])).join('\n'),
+            label: display_fields?.map(k => clampLabelField(k === '~id' ? id : item.properties[k])).join('\n'),
             itemType: label,
             legendType: label,
             size: customizedSize || metaNodeSize,
@@ -164,7 +180,7 @@ const formatToGraphData = (queryData, metaData, styleConfig) => {
                     return rawLabel || item.id;
                 }
                 return item.properties[k];
-            }).join('\n'),
+            }).map(clampLabelField).join('\n'),
             legendType: rawLabel,
             itemType: rawLabel,
             style: {

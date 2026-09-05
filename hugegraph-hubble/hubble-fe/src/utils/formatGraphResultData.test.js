@@ -106,3 +106,48 @@ test('exports raw edge label instead of display label', () => {
         properties: {since: 2026},
     });
 });
+
+test('clamps a long node label so it cannot be drawn across its neighbours', () => {
+    const longId = '1:Wolfeschlegelsteinhausenbergerdorff';
+    const graphData = formatToGraphData({
+        vertices: [
+            {id: longId, label: 'person', properties: {}},
+            {id: '1:marko', label: 'person', properties: {}},
+        ],
+        edges: [],
+    }, metaData, {});
+
+    // G6 4.8.25 has no textOverflow/maxWidth for labels, so the string itself is bounded.
+    expect(graphData.nodes[0].label).toBe('1:Wolfeschlegelst...');
+    expect(graphData.nodes[0].id).toBe(longId);
+    expect(graphData.nodes[1].label).toBe('1:marko');
+});
+
+test('clamps a long edge display field without touching the exported properties', () => {
+    const longNote = 'n'.repeat(84);
+    const graphData = formatToGraphData({
+        vertices: [],
+        edges: [
+            {
+                id: 'edge-1',
+                label: 'knows',
+                source: 'v1',
+                target: 'v2',
+                properties: {note: longNote},
+            },
+        ],
+    }, {
+        ...metaData,
+        edgeMeta: [
+            {
+                name: 'knows',
+                style: {
+                    display_fields: ['note'],
+                },
+            },
+        ],
+    }, {});
+
+    expect(graphData.edges[0].label).toBe(`${'n'.repeat(17)}...`);
+    expect(formatToDownloadData(graphData).edges[0].properties).toEqual({note: longNote});
+});
