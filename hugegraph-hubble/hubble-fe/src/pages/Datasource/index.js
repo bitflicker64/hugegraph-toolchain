@@ -159,6 +159,10 @@ const Datasource = () => {
     useEffect(() => {
         const token = Symbol('datasource-list');
         listRequest.current = token;
+        // A selection belongs to the rows it was made on. Searching or paging
+        // replaces them, and antd clears the visible checkboxes, so keeping the
+        // keys would arm batch deletion for rows the user can no longer see.
+        setSelectedItems([]);
         setLoading(true);
         setLoadError(false);
         api.manage.getDatasourceList({
@@ -252,6 +256,7 @@ const Datasource = () => {
                         dataSource={data}
                         rowSelection={{
                             type: 'checkbox',
+                            selectedRowKeys: selectedItems,
                             onChange: selectedRowKeys => {
                                 setSelectedItems(selectedRowKeys);
                             },

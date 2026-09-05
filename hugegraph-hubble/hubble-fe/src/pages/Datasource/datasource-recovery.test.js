@@ -71,7 +71,9 @@ it('distinguishes a failed data-source list from an empty list and retries', asy
     );
     fireEvent.click(screen.getByRole('button', {name: 'Retry data sources'}));
 
-    await waitFor(() => expect(api.manage.getDatasourceList).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(api.manage.getDatasourceList).toHaveBeenLastCalledWith(
+        expect.objectContaining({query: 'imp_third'})
+    ));
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
     expect(await screen.findByText('No data sources yet')).toBeInTheDocument();
 });
@@ -100,4 +102,43 @@ it('explains the empty state and disables bulk deletion without a selection', as
     expect(screen.getByRole('button', {name: 'Delete data source'})).toBeDisabled();
     expect(screen.getAllByRole('button', {name: 'Add data source'}).length)
         .toBeGreaterThan(1);
+});
+
+it('drops a selection the next result set no longer shows', async () => {
+    const source = (id, name) => ({
+        datasource_id: id,
+        datasource_name: name,
+        datasource_config: {type: 'FILE'},
+    });
+    // Earlier tests in this file leave their own implementations behind.
+    api.manage.getDatasourceList.mockReset();
+    api.manage.getDatasourceList
+        .mockResolvedValueOnce({
+            status: 200,
+            data: {records: [source(1, 'imp_one'), source(2, 'imp_two')], total: 2},
+        })
+        .mockResolvedValueOnce({
+            status: 200,
+            data: {records: [source(3, 'imp_third')], total: 1},
+        });
+
+    render(<Datasource />);
+
+    const [, firstRow] = await screen.findAllByRole('checkbox');
+    fireEvent.click(firstRow);
+    expect(screen.getByRole('button', {name: 'Delete data source'})).toBeEnabled();
+
+    const search = screen.getByPlaceholderText('Search');
+    fireEvent.change(search, {target: {value: 'imp_third'}});
+    fireEvent.keyDown(search, {key: 'Enter', keyCode: 13});
+
+    await waitFor(() => expect(api.manage.getDatasourceList).toHaveBeenLastCalledWith(
+        expect.objectContaining({query: 'imp_third'})
+    ));
+    // Confirming batch deletion here would have removed rows the user can no
+    // longer see and never re-confirmed.
+    expect(screen.getByRole('button', {name: 'Delete data source'})).toBeDisabled();
+    for (const checkbox of screen.getAllByRole('checkbox')) {
+        expect(checkbox).not.toBeChecked();
+    }
 });
