@@ -46,6 +46,8 @@ const EditLayer = ({visible, onCancel, data, refresh}) => {
             }).catch(() => {
                 setLoading(false);
             });
+        }).catch(() => {
+            // Validation errors are rendered inline by the form itself.
         });
     }, [form, onCancel, refresh]);
 
