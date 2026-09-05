@@ -60,9 +60,12 @@ const VertexTable = ({canWrite = true}) => {
             }
 
             Modal.confirm({
-                title: t('schema.vertex.delete_confirm'),
+                title: isBatch
+                    ? t('common.batch_delete')
+                    : t('schema.vertex.delete_confirm'),
                 content: (
-                    <><div>{t('schema.delete_irreversible')}</div>
+                    <><div>{names.join(', ')}</div>
+                        <div>{t('schema.delete_irreversible')}</div>
                         <div>{t('schema.delete_task_hint')}</div>
                     </>),
                 onOk: () => api.manage.delMetaVertex(

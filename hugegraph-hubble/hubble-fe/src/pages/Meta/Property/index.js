@@ -50,9 +50,14 @@ const PropertyTable = ({noHeader, forceRefresh, canWrite = true}) => {
             }
 
             Modal.confirm({
-                title: t('schema.property.delete_confirm'),
+                title: isBatch
+                    ? t('schema.common.batch_delete')
+                    : t('schema.property.delete_confirm'),
                 content: (
-                    <div>{t('schema.common.delete_warning')}</div>
+                    <>
+                        <div>{names.join(', ')}</div>
+                        <div>{t('schema.common.delete_warning')}</div>
+                    </>
                 ),
                 onOk: () => api.manage.delMetaProperty(
                     graphspace, graph, {names}, DELETE_REQUEST_CONFIG

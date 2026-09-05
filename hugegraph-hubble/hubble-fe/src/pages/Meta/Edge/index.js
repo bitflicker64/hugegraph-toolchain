@@ -47,9 +47,12 @@ const EdgeTable = ({canWrite = true}) => {
 
     const removeEdge = useCallback((names, isBatch) => {
         Modal.confirm({
-            title: t('schema.edge.delete_confirm'),
+            title: isBatch
+                ? t('common.batch_delete')
+                : t('schema.edge.delete_confirm'),
             content: (
-                <><div>{t('schema.delete_irreversible')}</div>
+                <><div>{names.join(', ')}</div>
+                    <div>{t('schema.delete_irreversible')}</div>
                     <div>{t('schema.delete_task_hint')}</div>
                 </>),
             onOk: () => api.manage.delMetaEdge(
