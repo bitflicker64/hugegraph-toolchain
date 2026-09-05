@@ -48,7 +48,16 @@ beforeAll(() => {
     }));
 });
 
-const renderDetail = () => render(
+const successRecord = {
+    id: 4,
+    task_name: 'g.V().count()',
+    task_type: 'gremlin',
+    task_status: 'success',
+    task_create: 1787991956000,
+    task_update: 1787991957000,
+};
+
+const renderDetail = (records = [successRecord]) => render(
     <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
         <GraphAnalysisContext.Provider
             value={{
@@ -63,15 +72,8 @@ const renderDetail = () => render(
                 onPageChange={jest.fn()}
                 getAsynTaskList={jest.fn()}
                 asyncManageTaskData={{
-                    records: [{
-                        id: 4,
-                        task_name: 'g.V().count()',
-                        task_type: 'gremlin',
-                        task_status: 'success',
-                        task_create: 1787991956000,
-                        task_update: 1787991957000,
-                    }],
-                    total: 1,
+                    records,
+                    total: records.length,
                 }}
                 loading={false}
             />
@@ -101,4 +103,20 @@ it('controls row expansion without opening a new browser tab', () => {
     }));
     expect(document.querySelector('.ant-table-row-expand-icon'))
         .not.toHaveClass('ant-table-row-expand-icon-expanded');
+});
+
+it('separates cancelled tasks from successful ones in the status column', () => {
+    renderDetail([
+        successRecord,
+        {...successRecord, id: 5, task_status: 'cancelled'},
+        {...successRecord, id: 6, task_status: 'cancelling'},
+    ]);
+
+    const [success, cancelled, cancelling] = Array.from(
+        document.querySelectorAll('.ant-tag')
+    );
+
+    expect(success).toHaveClass('ant-tag-green');
+    expect(cancelled).not.toHaveClass('ant-tag-green');
+    expect(cancelling).not.toHaveClass('ant-tag-green');
 });
