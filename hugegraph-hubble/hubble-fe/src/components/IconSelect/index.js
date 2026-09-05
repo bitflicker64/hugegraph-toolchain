@@ -82,6 +82,7 @@ const IconSelect = props => {
     if (disabled) {
         return (
             <Input
+                aria-label={t('selector.icon_picker')}
                 placeholder={t('selector.placeholder')}
                 disabled
             />
@@ -96,6 +97,7 @@ const IconSelect = props => {
             content={<div className={c.iconsWrapper}>{renderIcons()}</div>}
         >
             <Input
+                aria-label={t('selector.icon_picker')}
                 placeholder={t('selector.placeholder')}
                 value={icon}
                 suffix={<CurrentIcon />}

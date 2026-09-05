@@ -17,10 +17,46 @@
 
 import fs from 'fs';
 import path from 'path';
+import {render, screen} from '@testing-library/react';
+import IconSelect from './index';
+import enUSPages from '../../i18n/resources/en-US/modules/pages.json';
+import zhCNPages from '../../i18n/resources/zh-CN/modules/pages.json';
+
+jest.mock('react-i18next', () => ({
+    useTranslation: () => ({t: key => key}),
+}));
+
+beforeEach(() => {
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+    }));
+});
 
 test('disabled icon selector uses localized placeholder without Chinese copy', () => {
     const source = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
 
     expect(source).not.toMatch(/[\u3400-\u9fff]/u);
     expect(source).toContain("placeholder={t('selector.placeholder')}");
+});
+
+test('names the icon picker so it is not just another blank selector', () => {
+    render(<IconSelect value='UserOutlined' onChange={jest.fn()} />);
+
+    expect(screen.getByLabelText('selector.icon_picker')).toHaveValue('UserOutlined');
+});
+
+test('names the disabled icon picker too', () => {
+    render(<IconSelect disabled />);
+
+    expect(screen.getByLabelText('selector.icon_picker')).toBeDisabled();
+});
+
+test('both locales translate the icon picker label', () => {
+    expect(enUSPages.selector.icon_picker).toBe('Choose icon');
+    expect(zhCNPages.selector.icon_picker).toBeTruthy();
 });

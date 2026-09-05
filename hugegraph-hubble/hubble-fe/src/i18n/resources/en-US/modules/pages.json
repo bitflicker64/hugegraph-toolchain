@@ -1483,5 +1483,8 @@
     "subtitle": "A one-stop analysis platform for graph technology enthusiasts",
     "form_hint": "Use your HugeGraph account to explore graph visualization",
     "language": "Language"
+  },
+  "selector": {
+    "icon_picker": "Choose icon"
   }
 }

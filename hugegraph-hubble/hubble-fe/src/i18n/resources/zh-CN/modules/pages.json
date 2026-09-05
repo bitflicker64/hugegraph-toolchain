@@ -1483,5 +1483,8 @@
     "subtitle": "面向图技术爱好者的一站式分析平台",
     "form_hint": "用 HugeGraph 账号探索图可视化",
     "language": "语言"
+  },
+  "selector": {
+    "icon_picker": "选择图标"
   }
 }
