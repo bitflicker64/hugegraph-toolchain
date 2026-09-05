@@ -70,6 +70,7 @@ const EditLayer = ({
     const [schemaLoading, setSchemaLoading] = useState(false);
     const [schemaError, setSchemaError] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [loadedNickname, setLoadedNickname] = useState('');
     const [form] = Form.useForm();
     const {t} = useTranslation();
     const pdMode = isPdEnabled();
@@ -175,10 +176,20 @@ const EditLayer = ({
         setLoading(true);
 
         if (graph) {
+            const nickname = values.nickname ?? '';
+            // The graph detail endpoint can echo the graph name instead of the
+            // stored alias, so the dialog may open on an alias it never loaded.
+            // Submitting that empty field would erase an alias nobody could see.
+            if (!nickname && !loadedNickname) {
+                setLoading(false);
+                onCancel();
+                return;
+            }
+
             api.manage.updateGraph(
                 graphspace,
                 graph,
-                {nickname: values.nickname},
+                {nickname},
                 PAGE_ERROR_CONFIG
             ).then(res => {
                 setLoading(false);
@@ -291,6 +302,7 @@ const EditLayer = ({
         form,
         graph,
         graphspace,
+        loadedNickname,
         onCancel,
         pdMode,
         refresh,
@@ -308,12 +320,15 @@ const EditLayer = ({
         }
 
         if (graph) {
+            setLoadedNickname('');
             api.manage.getGraph(graphspace, graph).then(res => {
                 if (res.status === 200) {
+                    const alias = getResourceAlias(res.data.name, res.data.nickname);
+                    setLoadedNickname(alias);
                     form.setFieldsValue({
                         ...res.data,
                         graph: res.data.name,
-                        nickname: getResourceAlias(res.data.name, res.data.nickname),
+                        nickname: alias,
                     });
                 }
             });

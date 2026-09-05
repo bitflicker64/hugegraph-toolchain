@@ -532,6 +532,64 @@ test('keeps an existing graph path name immutable', async () => {
     expect(alias).toHaveValue('');
 });
 
+test('never erases an alias the edit dialog could not load', async () => {
+    api.manage.getGraph.mockResolvedValue({
+        status: 200,
+        data: {name: 'movie_graph', nickname: 'movie_graph'},
+    });
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
+    render(
+        <EditLayer
+            visible
+            onCancel={onCancel}
+            refresh={refresh}
+            graphspace='DEFAULT'
+            graph='movie_graph'
+        />
+    );
+
+    await waitFor(() => expect(
+        screen.getByPlaceholderText('graph.form.name_placeholder')
+    ).toHaveValue('movie_graph'));
+    expect(screen.getByPlaceholderText('graph.form.nickname_placeholder'))
+        .toHaveValue('');
+    await userEvent.click(screen.getByRole('button', {name: 'OK'}));
+
+    await waitFor(() => expect(onCancel).toHaveBeenCalled());
+    expect(api.manage.updateGraph).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+});
+
+test('still submits a deliberate removal of a loaded alias', async () => {
+    api.manage.getGraph.mockResolvedValue({
+        status: 200,
+        data: {name: 'movie_graph', nickname: 'Movies'},
+    });
+    api.manage.updateGraph.mockResolvedValue({status: 200});
+    render(
+        <EditLayer
+            visible
+            onCancel={jest.fn()}
+            refresh={jest.fn()}
+            graphspace='DEFAULT'
+            graph='movie_graph'
+        />
+    );
+
+    const alias = screen.getByPlaceholderText('graph.form.nickname_placeholder');
+    await waitFor(() => expect(alias).toHaveValue('Movies'));
+    await userEvent.clear(alias);
+    await userEvent.click(screen.getByRole('button', {name: 'OK'}));
+
+    await waitFor(() => expect(api.manage.updateGraph).toHaveBeenCalledWith(
+        'DEFAULT',
+        'movie_graph',
+        {nickname: ''},
+        {suppressBusinessErrorToast: true}
+    ));
+});
+
 test('preserves a real graph alias while editing', async () => {
     api.manage.getGraph.mockResolvedValue({
         status: 200,
