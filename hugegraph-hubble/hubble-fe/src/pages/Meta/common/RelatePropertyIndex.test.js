@@ -26,6 +26,8 @@ jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => key}),
 }));
 
+jest.mock('../../../i18n', () => ({t: key => key}));
+
 const SECONDARY = indexTypeOptions.find(item => item.value === 'SECONDARY');
 const UNIQUE = indexTypeOptions.find(item => item.value === 'UNIQUE');
 const NO_EXISTING_INDEX = [];
@@ -105,4 +107,15 @@ test('submits the chosen index type and fields when appending in edit mode', asy
     expect(onFinish.mock.calls[0][0].append_property_indexes).toEqual([
         {name: 'p2Unique', type: 'UNIQUE', fields: ['age']},
     ]);
+});
+
+test('reports a blank property index row instead of sending it', async () => {
+    const onFinish = jest.fn();
+    render(<IndexForm onFinish={onFinish} isEdit={false} />);
+
+    fireEvent.click(screen.getByRole('button', {name: '+common.action.add'}));
+    fireEvent.click(screen.getByRole('button', {name: 'submit'}));
+
+    expect(await screen.findAllByText('common.validation.required')).toHaveLength(3);
+    expect(onFinish).not.toHaveBeenCalled();
 });

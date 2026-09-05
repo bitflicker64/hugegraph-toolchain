@@ -20,6 +20,7 @@ import {Button, Form, Select, Input, Space} from 'antd';
 import {useCallback, useState, useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import {FormListAdd, FormListRemove} from '../../../components/FormListAction';
+import * as rules from '../../../utils/rules';
 import {indexTypeOptions} from './config';
 
 // The index row holds four controls inside a 600px modal, so each one gets an
@@ -185,6 +186,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                             style={indexNameStyle}
                                             key={[field.key, 'name']}
                                             name={[field.name, 'name']}
+                                            rules={[rules.required()]}
                                         >
                                             <Input placeholder={t('schema.index.col.name')} />
                                         </Form.Item>
@@ -192,6 +194,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                             className="form_attr_select"
                                             style={indexTypeStyle}
                                             name={[field.name, 'type']}
+                                            rules={[rules.required()]}
                                         >
                                             <IndexTypeSelect index={index} onTypeChange={setPropertyList} />
                                         </Form.Item>
@@ -199,6 +202,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                             className="form_attr_select"
                                             style={indexFieldsStyle}
                                             name={[field.name, 'fields']}
+                                            rules={[rules.required()]}
                                         >
                                             <Select
                                                 options={getPropertyList(plist[index])}
@@ -237,6 +241,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                         style={indexNameStyle}
                                         key={[field.key, 'name']}
                                         name={[field.name, 'name']}
+                                        rules={[rules.required()]}
                                     >
                                         <Input placeholder={t('schema.index.col.name')} />
                                     </Form.Item>
@@ -244,6 +249,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                         className="form_attr_select"
                                         style={indexTypeStyle}
                                         name={[field.name, 'type']}
+                                        rules={[rules.required()]}
                                     >
                                         <IndexTypeSelect index={index} onTypeChange={setPropertyList} />
                                     </Form.Item>
@@ -251,6 +257,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                         className="form_attr_select"
                                         style={indexFieldsStyle}
                                         name={[field.name, 'fields']}
+                                        rules={[rules.required()]}
                                     >
                                         <PropertyFieldsSelect
                                             options={getPropertyList(plist[index])}
