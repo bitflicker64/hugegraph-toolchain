@@ -22,6 +22,7 @@ import RouteList from './index';
 import {isAuthEnabled, isPdEnabled} from '../utils/config';
 
 let mockCapabilities = new Set();
+let mockAuthState = {loading: false, error: null};
 
 jest.mock('../pages/Datasource', () => () => <div>datasource page</div>);
 jest.mock('../pages/Task', () => () => <div>task page</div>);
@@ -59,7 +60,7 @@ jest.mock('../utils/config', () => ({
 }));
 jest.mock('../auth/AuthContext', () => ({
     useAuthContext: () => ({
-        loading: false,
+        ...mockAuthState,
         hasCapability: capability => mockCapabilities.has(capability),
     }),
 }));
@@ -98,6 +99,7 @@ describe('route guard', () => {
         sessionStorage.clear();
         mockAccountRender.mockClear();
         mockCapabilities = new Set();
+        mockAuthState = {loading: false, error: null};
         isAuthEnabled.mockReturnValue(true);
         isPdEnabled.mockReturnValue(false);
     });
@@ -295,6 +297,19 @@ describe('route guard', () => {
 
         expect(screen.getByText('navigation page')).toBeTruthy();
         expect(screen.queryByText('account page')).toBeNull();
+    });
+
+    it('keeps a loading placeholder on screen while the account context resolves', () => {
+        mockAuthState = {loading: true, error: null};
+        mockCapabilities.add('accounts_manage');
+        sessionStorage.setItem('user_', JSON.stringify({id: 'admin'}));
+
+        renderRoutes('/account');
+
+        expect(document.querySelector('.ant-skeleton')).toBeTruthy();
+        expect(screen.queryByText('account page')).toBeNull();
+        expect(screen.queryByText('navigation page')).toBeNull();
+        expect(mockAccountRender).not.toHaveBeenCalled();
     });
 
     it('allows non-PD account access only with the server capability', () => {

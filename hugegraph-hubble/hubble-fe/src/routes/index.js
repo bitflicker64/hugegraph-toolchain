@@ -16,6 +16,7 @@
  * under the License.
  */
 
+import {Skeleton} from 'antd';
 import {Navigate, Routes, Route, useParams, useLocation} from 'react-router-dom';
 import Datasource from '../pages/Datasource';
 import Task from '../pages/Task';
@@ -83,7 +84,7 @@ const AccountRoute = () => {
     const {loading, hasCapability} = useAuthContext();
 
     if (loading) {
-        return null;
+        return <Skeleton active />;
     }
 
     return hasCapability('accounts_manage')
@@ -99,7 +100,7 @@ const GraphSpaceListRoute = () => {
         return <Navigate to={`/graphspace/${DEFAULT_GRAPHSPACE}`} replace />;
     }
     if (loading) {
-        return null;
+        return <Skeleton active />;
     }
     return hasCapability('graphspaces_read')
         ? <GraphSpace /> : <Navigate to='/navigation' replace />;
