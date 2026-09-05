@@ -417,6 +417,83 @@ test('merges role into node identity and keeps the full ID explainable and copya
     expect(writeText).toHaveBeenCalledWith('store-c410c1adb107-full-id');
 });
 
+test('clamps unusable paging and sort values from the URL', async () => {
+    getNodes.mockResolvedValue({items: [], total: 0, observed_at: 1000, stale: false});
+
+    render(
+        <MemoryRouter
+            initialEntries={[
+                '/operations/nodes?page=abc&page_size=999&sort=bogus&order=sideways',
+            ]}
+            future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+        >
+            <Nodes />
+        </MemoryRouter>
+    );
+
+    expect(await screen.findByText('0 nodes')).toBeInTheDocument();
+    expect(getNodes).toHaveBeenLastCalledWith(expect.objectContaining({
+        page: 1,
+        page_size: 100,
+        sort: 'name',
+        order: 'asc',
+    }), false);
+    const [[requested]] = getNodes.mock.calls;
+    Object.values(requested).forEach(value => expect(value).not.toBeNaN());
+});
+
+test('offers a retry when the node list cannot be loaded', async () => {
+    getNodes
+        .mockRejectedValueOnce(Object.assign(new Error('bad request'), {status: 400}))
+        .mockResolvedValue({
+            items: [{id: 'server-1', name: 'Server A', type: 'SERVER', status: 'UP'}],
+            total: 1,
+            observed_at: 1000,
+            stale: false,
+        });
+
+    render(
+        <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+            <Nodes />
+        </MemoryRouter>
+    );
+
+    const alert = await screen.findByRole('alert');
+    const retry = within(alert).getByRole('button', {name: 'Retry'});
+    fireEvent.click(retry);
+
+    expect(await screen.findByRole('link', {name: /Server A/})).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+test('returns to the last populated page when the URL points past the end', async () => {
+    getNodes.mockResolvedValue({
+        items: [{id: 'server-1', name: 'Server A', type: 'SERVER', status: 'UP'}],
+        total: 1,
+        observed_at: 1000,
+        stale: false,
+    });
+
+    render(
+        <MemoryRouter
+            initialEntries={['/operations/nodes?page=99']}
+            future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+        >
+            <FilterLocationProbe />
+            <Nodes />
+        </MemoryRouter>
+    );
+
+    await waitFor(() => expect(
+        new URLSearchParams(screen.getByLabelText('filter location').textContent)
+            .get('page')
+    ).toBe('1'));
+    await waitFor(() => expect(getNodes).toHaveBeenLastCalledWith(
+        expect.objectContaining({page: 1}), false
+    ));
+    expect(await screen.findByRole('link', {name: /Server A/})).toBeInTheDocument();
+});
+
 test('reports the observation time of each node, not the snapshot time', async () => {
     getNodes.mockResolvedValue({
         items: [

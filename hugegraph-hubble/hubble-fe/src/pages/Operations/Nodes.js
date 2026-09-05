@@ -37,6 +37,17 @@ import './operations.scss';
 
 const stopRowNavigation = event => event.stopPropagation();
 
+// The API rejects anything outside these bounds with a 400, and only a stale
+// bookmark or a hand-edited URL can carry such a value, so fall back to the
+// default rather than forwarding NaN, 0 or an unknown sort field.
+const SORT_FIELDS = ['name', 'type', 'status', 'observed_at'];
+const MAX_PAGE_SIZE = 100;
+
+const boundedNumber = (value, fallback, maximum = Number.MAX_SAFE_INTEGER) => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) && parsed >= 1 ? Math.min(parsed, maximum) : fallback;
+};
+
 const shortNodeId = id => {
     const normalized = String(id ?? '');
     return normalized.length > 12 ? `…${normalized.slice(-12)}` : normalized;
@@ -116,10 +127,11 @@ const Nodes = () => {
         type: pdMode ? searchParams.get('type') || undefined : 'SERVER',
         status: searchParams.get('status') || undefined,
         query: searchParams.get('query') || undefined,
-        page: Number(searchParams.get('page') || 1),
-        page_size: Number(searchParams.get('page_size') || 20),
-        sort: searchParams.get('sort') || 'name',
-        order: searchParams.get('order') || 'asc',
+        page: boundedNumber(searchParams.get('page'), 1),
+        page_size: boundedNumber(searchParams.get('page_size'), 20, MAX_PAGE_SIZE),
+        sort: SORT_FIELDS.includes(searchParams.get('sort'))
+            ? searchParams.get('sort') : 'name',
+        order: searchParams.get('order') === 'desc' ? 'desc' : 'asc',
     }), [pdMode, searchParams]);
     const [searchValue, setSearchValue] = useState(params.query ?? '');
 
@@ -181,6 +193,15 @@ const Nodes = () => {
         }
         setSearchParams(next, {replace: true});
     }, [searchParams, setSearchParams]);
+
+    // A page index past the end answers 200 with no rows, which would otherwise
+    // read as "N nodes" above an empty table with nothing to explain it.
+    useEffect(() => {
+        const lastPage = Math.max(1, Math.ceil(Number(data.total) / params.page_size));
+        if (!loading && !error && Number.isFinite(lastPage) && params.page > lastPage) {
+            update({page: String(lastPage)});
+        }
+    }, [data.total, error, loading, params.page, params.page_size, update]);
 
     const changeType = useCallback(value => update({type: value}), [update]);
     const changeStatus = useCallback(value => update({status: value}), [update]);
@@ -288,7 +309,16 @@ const Nodes = () => {
                 <RefreshButton loading={loading} onClick={refresh} />
             </header>
             {error && (
-                <Alert type='warning' showIcon message={t('operations.load_failed')} />
+                <Alert
+                    type='warning'
+                    showIcon
+                    message={t('operations.load_failed')}
+                    action={(
+                        <Button size='small' onClick={refresh}>
+                            {t('common.action.retry')}
+                        </Button>
+                    )}
+                />
             )}
             <section className='operations-surface'>
                 <div className='operations-filter-row'>
