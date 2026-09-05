@@ -325,3 +325,29 @@ test('isolates drafts and reset only clears the current graph', () => {
     expect(window.localStorage.getItem(current)).toBeNull();
     expect(window.localStorage.getItem(other)).not.toBeNull();
 });
+
+test('re-runs the run gate after a saved draft is restored', async () => {
+    window.localStorage.setItem(
+        algorithmFormStorageKey('DEFAULT', 'hugegraph', 'K-out'),
+        JSON.stringify({source: '1:alice'})
+    );
+    const onValuesChange = jest.fn();
+
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AlgorithmPersistenceContext.Provider value='K-out'>
+                <Form onValuesChange={onValuesChange}>
+                    <Form.Item name='source'>
+                        <Input aria-label='source' />
+                    </Form.Item>
+                </Form>
+            </AlgorithmPersistenceContext.Provider>
+        </GraphAnalysisContext.Provider>
+    );
+
+    await waitFor(() => expect(screen.getByLabelText('source')).toHaveValue('1:alice'));
+    expect(onValuesChange).toHaveBeenCalledWith(
+        {source: '1:alice'},
+        expect.objectContaining({source: '1:alice'})
+    );
+});

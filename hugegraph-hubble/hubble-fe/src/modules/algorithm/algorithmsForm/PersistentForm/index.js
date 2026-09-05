@@ -15,7 +15,7 @@
  * under the License.
  */
 
-import React, {useCallback, useContext, useEffect} from 'react';
+import React, {useCallback, useContext, useEffect, useRef} from 'react';
 import {Form as AntForm} from 'antd';
 import {useTranslation} from 'react-i18next';
 import GraphAnalysisContext from '../../../Context';
@@ -147,12 +147,17 @@ const PersistentForm = props => {
         ...formProps
     } = props;
     const storageKey = algorithmFormStorageKey(graphSpace, graph, algorithmName);
+    const valuesChangeRef = useRef(onValuesChange);
+    valuesChangeRef.current = onValuesChange;
 
     useEffect(() => {
         form.resetFields();
         const values = readPersistedValues(storageKey);
         if (values) {
             form.setFieldsValue(values);
+            // setFieldsValue never fires onValuesChange, so a restored draft would
+            // leave the run gate disabled until the user edited a field by hand.
+            valuesChangeRef.current?.(values, form.getFieldsValue());
         }
     }, [form, storageKey]);
 
