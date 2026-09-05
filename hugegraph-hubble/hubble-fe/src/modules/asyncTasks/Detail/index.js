@@ -41,7 +41,11 @@ import {AsyncTaskResultContent} from '../Result';
 import c from './index.module.scss';
 const {Text} = Typography;
 
-const {FAILED, SUCCESS, DELETING, CANCELLING} = Async_Taskt_Status;
+const {FAILED, SUCCESS, DELETING, CANCELLING, CANCELLED} = Async_Taskt_Status;
+
+// Only a settled task carries a meaningful task_update: while it is still going
+// task_update holds the moment it started, not "now".
+const SETTLED_STATUS = [SUCCESS, FAILED, CANCELLED];
 
 const TaskAction = ({onAction, args, children, ...buttonProps}) => {
     const handleClick = useCallback(() => onAction(...args), [args, onAction]);
@@ -248,8 +252,9 @@ const AsyncTaskDetail = props => {
             title: t('analysis.async_task.column.duration'),
             dataIndex: 'task_progress',
             render: (task_progress, rowData, index) => {
-                const {task_update, task_create} = rowData;
-                const duration = formatTimeDuration(task_create, task_update);
+                const {task_update, task_create, task_status} = rowData;
+                const end = SETTLED_STATUS.includes(task_status) ? task_update : Date.now();
+                const duration = formatTimeDuration(task_create, end);
                 return <div style={{whiteSpace: 'nowrap'}}>{duration}</div>;
             },
         },

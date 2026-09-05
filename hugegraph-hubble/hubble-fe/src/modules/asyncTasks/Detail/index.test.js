@@ -120,3 +120,23 @@ it('separates cancelled tasks from successful ones in the status column', () => 
     expect(cancelled).not.toHaveClass('ant-tag-green');
     expect(cancelling).not.toHaveClass('ant-tag-green');
 });
+
+it('measures a running task against the current time, not its last update', () => {
+    const now = jest.spyOn(Date, 'now')
+        .mockReturnValue(successRecord.task_create + 95000);
+
+    try {
+        renderDetail([{
+            ...successRecord,
+            id: 7,
+            task_status: 'running',
+            task_update: successRecord.task_create + 50,
+        }]);
+
+        expect(screen.getByText('1m 35s 0ms')).toBeInTheDocument();
+        expect(screen.queryByText('50ms')).toBeNull();
+    }
+    finally {
+        now.mockRestore();
+    }
+});
