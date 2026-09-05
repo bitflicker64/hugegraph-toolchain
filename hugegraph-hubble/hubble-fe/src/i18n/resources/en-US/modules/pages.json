@@ -219,6 +219,7 @@
       "description": "Description",
       "creator": "Creator",
       "create_time": "Created At",
+      "update_time": "Updated At",
       "operation": "Actions"
     },
     "menu": {
