@@ -38,6 +38,9 @@ import {GRAPH_STATUS} from '../../../../utils/constants';
 
 const PREVIEW_ITEM_LIMIT = 3;
 const PREVIEW_CHAR_LIMIT = 1200;
+// Shared so that a missing result keeps a stable identity across renders,
+// instead of handing the memos and effects below a brand new object each time.
+const EMPTY_RESULT_VIEW = {};
 
 const getPreviewContent = (tableView, jsonViewContent) => {
     const rows = Array.isArray(tableView?.rows) ? tableView.rows : [];
@@ -91,10 +94,10 @@ const QueryResult = props => {
     } = props;
 
     const {
-        graph_view: queryResultGraph = {},
-        json_view: queryResultJson = {},
-        table_view: queryResultTable = {},
-    } = queryResult || {};
+        graph_view: queryResultGraph = EMPTY_RESULT_VIEW,
+        json_view: queryResultJson = EMPTY_RESULT_VIEW,
+        table_view: queryResultTable = EMPTY_RESULT_VIEW,
+    } = queryResult || EMPTY_RESULT_VIEW;
 
     const jsonViewContent = useMemo(
         () => getJsonViewContent(queryResultJson),
@@ -108,7 +111,7 @@ const QueryResult = props => {
     const handleViewFullJson = useCallback(() => setActiveView(3), []);
     useEffect(() => {
         setActiveView(graphLimit.exceeded ? 2 : 1);
-    }, [graphLimit.exceeded, queryResultGraph]);
+    }, [graphLimit.exceeded, queryResult]);
 
     const GRAPH_VIEW = t('analysis.query_result.graph');
     const TABLE_VIEW = t('analysis.query_result.table');

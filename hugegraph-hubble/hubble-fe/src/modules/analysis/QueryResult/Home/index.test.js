@@ -108,6 +108,45 @@ describe('graph view limits', () => {
     });
 });
 
+it('keeps a hand-picked result tab when there is no graph result to show', () => {
+    // Standby and failed queries both leave the result without a graph_view.
+    const standbyResult = {};
+    const view = render(<QueryResult queryResult={standbyResult} />);
+
+    fireEvent.click(screen.getByRole('tab', {name: 'Table'}));
+
+    expect(screen.getByRole('tab', {name: 'Table'})).toHaveAttribute(
+        'aria-selected', 'true'
+    );
+
+    // A re-render that carries no new result must not snap the view back.
+    view.rerender(<QueryResult
+        queryResult={standbyResult}
+        queryMessage='Gremlin execute failed'
+    />);
+
+    expect(screen.getByRole('tab', {name: 'Table'})).toHaveAttribute(
+        'aria-selected', 'true'
+    );
+});
+
+it('keeps a hand-picked result tab when the query produced no result object', () => {
+    // An async submit and a thrown request both clear queryResult entirely.
+    const view = render(<QueryResult />);
+
+    fireEvent.click(screen.getByRole('tab', {name: 'JSON'}));
+
+    expect(screen.getByRole('tab', {name: 'JSON'})).toHaveAttribute(
+        'aria-selected', 'true'
+    );
+
+    view.rerender(<QueryResult asyncTaskResult={7} />);
+
+    expect(screen.getByRole('tab', {name: 'JSON'})).toHaveAttribute(
+        'aria-selected', 'true'
+    );
+});
+
 it('labels the structured result tab as JSON', () => {
     render(<QueryResult queryResult={{}} />);
 
