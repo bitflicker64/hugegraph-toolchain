@@ -128,8 +128,9 @@ const Graph = () => {
 
     const handleSearch = useCallback(val => {
         setGraphname(val);
-        setRefresh(!refresh);
-    }, [refresh]);
+        setPagination(value => ({...value, current: 1}));
+        setRefresh(value => !value);
+    }, []);
 
     const handleSearchTextChange = useCallback(event => {
         setSearchText(event.target.value);
@@ -293,7 +294,10 @@ const Graph = () => {
         setViewLayer(false);
     }, []);
 
-    const handleDatePickerChange = useCallback((_, val) => setDateData(val), []);
+    const handleDatePickerChange = useCallback((_, val) => {
+        setDateData(val);
+        setPagination(value => ({...value, current: 1}));
+    }, []);
     const hasFilters = Boolean(dateData || graphname);
 
     const saveNickname = useCallback(async (row, nickname) => {
