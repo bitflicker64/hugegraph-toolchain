@@ -417,6 +417,38 @@ test('merges role into node identity and keeps the full ID explainable and copya
     expect(writeText).toHaveBeenCalledWith('store-c410c1adb107-full-id');
 });
 
+test('reports the observation time of each node, not the snapshot time', async () => {
+    getNodes.mockResolvedValue({
+        items: [
+            {id: 'server-early', name: 'Server early', type: 'SERVER', status: 'UP',
+                observed_at: Date.UTC(2026, 8, 6, 1, 30, 0)},
+            {id: 'server-late', name: 'Server late', type: 'SERVER', status: 'UP',
+                observed_at: Date.UTC(2026, 8, 6, 1, 45, 0)},
+        ],
+        total: 2,
+        observed_at: Date.UTC(2026, 8, 6, 2, 0, 0),
+        stale: false,
+    });
+
+    render(
+        <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+            <Nodes />
+        </MemoryRouter>
+    );
+
+    await screen.findByRole('link', {name: /Server early/});
+    const column = screen.getAllByRole('columnheader')
+        .findIndex(header => header.textContent === 'Last observed');
+    expect(column).toBeGreaterThanOrEqual(0);
+    const observedCells = screen.getAllByRole('row')
+        .slice(1)
+        .map(row => within(row).getAllByRole('cell')[column].textContent);
+    expect(observedCells).toHaveLength(2);
+    expect(new Set(observedCells).size).toBe(2);
+    const snapshot = screen.getByText(/^Observed:/).textContent;
+    observedCells.forEach(cell => expect(snapshot).not.toContain(cell));
+});
+
 test('asks for a fresh collection when the node list is refreshed', async () => {
     getNodes.mockResolvedValue({items: [], total: 0, observed_at: 1000, stale: false});
 

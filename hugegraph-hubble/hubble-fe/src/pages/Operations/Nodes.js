@@ -260,7 +260,10 @@ const Nodes = () => {
                 />
             )},
         {title: t('operations.last_observed'), key: 'observed_at', width: 208,
-            sorter: true, sortOrder: sortOrder('observed_at'), render: () => observed},
+            sorter: true, sortOrder: sortOrder('observed_at'),
+            render: (_, record) => formatObservedAt(
+                record.observed_at ?? data.observed_at, i18n.language, unavailable
+            )},
         {title: t('operations.version'), dataIndex: 'version', key: 'version', width: 104,
             responsive: ['lg'], render: value => value ?? '—'},
     ];
