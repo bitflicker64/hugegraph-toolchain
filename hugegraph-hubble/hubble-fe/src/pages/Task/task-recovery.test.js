@@ -274,7 +274,10 @@ it('gives every task-row action an accessible name and disables unsafe actions',
     expect(runningDelete).toBeDisabled();
     expect(finishedEdit).toBeEnabled();
     expect(finishedDelete).toBeEnabled();
-    expect(screen.getAllByRole('button', {name: 'Pause task'})[0]).toBeEnabled();
+    // A one-time import has no schedule to pause and cannot be started again, so
+    // the control that only rewrites the schedule flag is not offered.
+    expect(screen.queryByRole('button', {name: 'Pause task'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: 'Run task'})).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', {name: 'Creator'}))
         .not.toBeInTheDocument();
 });

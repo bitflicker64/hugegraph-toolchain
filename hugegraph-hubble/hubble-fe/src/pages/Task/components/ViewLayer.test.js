@@ -177,3 +177,29 @@ test('ships accurate Task Information copy in both languages', () => {
         technical_details: 'Technical Details',
     });
 });
+
+test('reports the run status of a paused task, not its schedule flag', async () => {
+    api.manage.getTaskDetail.mockResolvedValue({
+        status: 200,
+        data: {
+            job_name: 'paused_import',
+            graphspace: 'DEFAULT',
+            graph: 'hugegraph',
+            // hubble-be writes JobStatus.FAILED into job_status when a task is
+            // paused and JobStatus.DEFAULT when it is resumed.
+            job_status: 'FAILED',
+        },
+    });
+
+    render(
+        <ViewLayer
+            visible
+            task_id='11'
+            metrics={{status: 'SUCCEED'}}
+            onCancel={jest.fn()}
+        />
+    );
+
+    expect(await screen.findByText('task.status.success')).toBeVisible();
+    expect(screen.queryByText('task.status.failed')).not.toBeInTheDocument();
+});

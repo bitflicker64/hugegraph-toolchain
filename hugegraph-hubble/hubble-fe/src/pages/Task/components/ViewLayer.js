@@ -37,7 +37,7 @@ const displayValue = (value, fallback) => (
     value === null || value === undefined || value === '' ? fallback : value
 );
 
-const ViewLayer = ({visible, onCancel, task_id}) => {
+const ViewLayer = ({visible, onCancel, task_id, metrics}) => {
     const {t} = useTranslation();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -126,7 +126,13 @@ const ViewLayer = ({visible, onCancel, task_id}) => {
                                 {displayValue(data.graph, unavailable)}
                             </Descriptions.Item>
                             <Descriptions.Item label={t('task.view.status')}>
-                                <TaskStatus status={data.job_status ?? data.status} />
+                                {/* `job_status` doubles as the schedule flag: pausing
+                                    a task writes FAILED and resuming writes DEFAULT,
+                                    so a finished import reads as failed here. The run
+                                    metrics the list shows are the honest source. */}
+                                <TaskStatus
+                                    status={metrics ?? data.job_status ?? data.status}
+                                />
                             </Descriptions.Item>
                             <Descriptions.Item label={t('task.view.data_size')}>
                                 {displayValue(data.job_size, unavailable)}

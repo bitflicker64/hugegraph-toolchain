@@ -147,6 +147,11 @@ const TaskActions = ({row, onView, onEdit, onEnable, onDisable, onDelete}) => {
     // stays ENABLE for every task that has not been paused, finished ones included.
     // What makes editing or deleting unsafe is an execution still in flight.
     const canEditOrDelete = !isTaskInProgress(row.last_metrics);
+    // Pause and Run only flip that schedule flag. For a one-time import there is no
+    // schedule to pause and nothing to start again, so the backend rewrites the job
+    // status and reports success while no execution ever runs.
+    const canSchedule = row.task_schedule_type !== 'ONCE';
+    const isScheduleEnabled = row.task_schedule_status === 'ENABLE';
     const handleView = useCallback(() => onView(row), [onView, row]);
     const handleEdit = useCallback(() => onEdit(row), [onEdit, row]);
     const handleDelete = useCallback(() => {
@@ -175,14 +180,14 @@ const TaskActions = ({row, onView, onEdit, onEnable, onDisable, onDelete}) => {
                 disabled={!canEditOrDelete}
                 onClick={handleEdit}
             />
-            {row.task_schedule_status === 'ENABLE'
+            {canSchedule
                 ? (
                     <RunningText
-                        status='enable'
+                        status={isScheduleEnabled ? 'enable' : undefined}
                         data={row.task_id}
-                        onClick={onDisable}
+                        onClick={isScheduleEnabled ? onDisable : onEnable}
                     />)
-                : <RunningText data={row.task_id} onClick={onEnable} />}
+                : null}
             <Button
                 type='link'
                 danger
@@ -682,6 +687,7 @@ const Task = () => {
                 <ViewLayer
                     visible={viewLayer}
                     task_id={detail.task_id}
+                    metrics={detail.last_metrics}
                     onCancel={handleHideViewLayer}
                 />
             </div>
