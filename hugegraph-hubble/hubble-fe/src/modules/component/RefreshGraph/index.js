@@ -36,9 +36,13 @@ const RefreshGraph = () => {
             const {layout} = graph.cfg;
             if (layout) {
                 graph.destroyLayout();
+                // No align argument. G6's 'center' align re-centres from its own
+                // afterlayout handler with the matrix taken before the layout ran, but
+                // the canvas afterlayout -> fitView handler runs first and replaces that
+                // matrix, so the re-centre pushes nodes off-canvas.
                 graph.updateLayout(
                     disableChangeDataRelayout(layout),
-                    'center',
+                    undefined,
                     undefined,
                     false
                 );
