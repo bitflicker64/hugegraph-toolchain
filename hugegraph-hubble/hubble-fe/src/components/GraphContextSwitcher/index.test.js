@@ -217,6 +217,42 @@ describe('GraphContextSwitcher', () => {
         });
     });
 
+    test('leaves a missing graph on the page that reports it', async () => {
+        sessionStorage.setItem('hubble_config_', JSON.stringify({pd_enabled: true}));
+        api.manage.getGraphList.mockResolvedValueOnce({
+            status: 200,
+            data: {records: [{name: 'graph_b', nickname: 'Graph B'}]},
+        });
+        renderSwitcher('/graphspace/space_a/graph/missing_graph/detail');
+
+        await waitFor(() => {
+            expect(screen.getByRole('combobox', {name: 'workbench.context.graph'}))
+                .toHaveValue('');
+        });
+        expect(screen.getByText('/graphspace/space_a/graph/missing_graph/detail'))
+            .toBeInTheDocument();
+        expect(JSON.parse(localStorage.getItem('hubble_workbench_graph_context'))).toEqual({
+            graphspace: 'space_a',
+        });
+    });
+
+    test('leaves a missing GraphSpace on the graph list that reports it', async () => {
+        sessionStorage.setItem('hubble_config_', JSON.stringify({pd_enabled: true}));
+        api.manage.getGraphSpaceList.mockResolvedValueOnce({
+            status: 200,
+            data: [{name: 'space_b', nickname: 'Space B'}],
+        });
+        api.manage.getGraphList.mockResolvedValueOnce({status: 404, data: null});
+        renderSwitcher('/graphspace/deleted_space');
+
+        await waitFor(() => {
+            expect(screen.getByRole('combobox', {name: 'workbench.context.graphspace'}))
+                .toHaveValue('');
+        });
+        expect(screen.getByText('/graphspace/deleted_space')).toBeInTheDocument();
+        expect(localStorage.getItem('hubble_workbench_graph_context')).toBeNull();
+    });
+
     test('route context selects and persists the current graph', async () => {
         sessionStorage.setItem('hubble_config_', JSON.stringify({pd_enabled: true}));
         renderSwitcher('/gremlin/space_a/graph_a');

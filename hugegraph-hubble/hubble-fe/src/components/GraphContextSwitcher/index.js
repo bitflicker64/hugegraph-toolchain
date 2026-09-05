@@ -17,7 +17,7 @@
  */
 
 import {Alert, Button, Select, Space} from 'antd';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import * as api from '../../api';
@@ -51,6 +51,12 @@ const getSelectWidth = label => {
 const getAnalysisModule = pathname => pathname.match(
     /^\/(gremlin|algorithms|asyncTasks)(?:\/|$)/
 )?.[1];
+
+// Routes that render their own "not available" state for the resource named in
+// the URL. Navigating away from one of them replaces a real explanation with a
+// silent bounce, so on those routes the switcher only drops its stale context.
+const REPORTS_MISSING_GRAPHSPACE = /^\/graphspace\/[^/]+(?:\/graph\/[^/]+\/detail)?\/?$/;
+const REPORTS_MISSING_GRAPH = /^\/graphspace\/[^/]+\/graph\/[^/]+\/detail\/?$/;
 
 const getRecords = response => {
     if (response?.status !== 200) {
@@ -94,6 +100,13 @@ const GraphContextSwitcher = () => {
     const [loading, setLoading] = useState({graphspaces: pdEnabled, graphs: true});
     const [errors, setErrors] = useState({graphspaces: false, graphs: false});
     const [reloadTokens, setReloadTokens] = useState({graphspaces: 0, graphs: 0});
+    // Read by the reconciling effects below, which must not re-run (and so must
+    // not re-request the lists) on every navigation.
+    const pathnameRef = useRef(location.pathname);
+
+    useEffect(() => {
+        pathnameRef.current = location.pathname;
+    }, [location.pathname]);
 
     useEffect(() => {
         const nextContext = resolveWorkbenchGraphContext({
@@ -165,7 +178,9 @@ const GraphContextSwitcher = () => {
                         setContext({});
                         setGraphs([]);
                         setErrors(value => ({...value, graphs: false}));
-                        navigate('/navigation', {replace: true});
+                        if (!REPORTS_MISSING_GRAPHSPACE.test(pathnameRef.current)) {
+                            navigate('/navigation', {replace: true});
+                        }
                     }
                     else {
                         setErrors(value => ({...value, graphs: kind}));
@@ -189,7 +204,9 @@ const GraphContextSwitcher = () => {
         setContext({});
         setGraphs([]);
         clearWorkbenchGraphContext(localStorage);
-        navigate('/navigation', {replace: true});
+        if (!REPORTS_MISSING_GRAPHSPACE.test(pathnameRef.current)) {
+            navigate('/navigation', {replace: true});
+        }
     }, [
         context.graphspace,
         errors.graphspaces,
@@ -209,10 +226,12 @@ const GraphContextSwitcher = () => {
         const nextContext = {graphspace: context.graphspace};
         setContext(nextContext);
         writeWorkbenchGraphContext(localStorage, nextContext);
-        navigate(
-            `/graphspace/${encodeURIComponent(context.graphspace)}`,
-            {replace: true}
-        );
+        if (!REPORTS_MISSING_GRAPH.test(pathnameRef.current)) {
+            navigate(
+                `/graphspace/${encodeURIComponent(context.graphspace)}`,
+                {replace: true}
+            );
+        }
     }, [
         context.graph,
         context.graphspace,
