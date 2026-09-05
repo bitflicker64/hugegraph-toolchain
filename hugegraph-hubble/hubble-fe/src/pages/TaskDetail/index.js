@@ -112,8 +112,12 @@ const TaskDetail = () => {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
     const [retryToken, setRetryToken] = useState(0);
+    const [pollToken, setPollToken] = useState(0);
     const [dataTaskId, setDataTaskId] = useState(null);
     const request = useRef(null);
+    const pending = useRef(false);
+    const failed = useRef(false);
+    const silentRefresh = useRef(false);
     const {taskid} = useParams();
     const navigate = useNavigate();
 
@@ -123,7 +127,13 @@ const TaskDetail = () => {
     useEffect(() => {
         const token = Symbol('task-detail-jobs');
         request.current = token;
-        setLoading(true);
+        pending.current = true;
+        // A background refresh must not blank the table that is already on screen.
+        const silent = silentRefresh.current;
+        silentRefresh.current = false;
+        if (!silent) {
+            setLoading(true);
+        }
         api.manage.getJobsList({taskid}, {
             suppressBusinessErrorToast: true,
         }).then(res => {
@@ -133,20 +143,24 @@ const TaskDetail = () => {
             if (res.status === 200) {
                 setData(res.data.records);
                 setDataTaskId(taskid);
+                failed.current = false;
                 setLoadError(false);
                 return;
             }
             setData([]);
             setDataTaskId(taskid);
+            failed.current = true;
             setLoadError(true);
         }).catch(() => {
             if (request.current === token) {
                 setData([]);
                 setDataTaskId(taskid);
+                failed.current = true;
                 setLoadError(true);
             }
         }).finally(() => {
             if (request.current === token) {
+                pending.current = false;
                 setLoading(false);
             }
         });
@@ -156,7 +170,21 @@ const TaskDetail = () => {
                 request.current = null;
             }
         };
-    }, [taskid, retryToken]);
+    }, [taskid, retryToken, pollToken]);
+
+    // A run in flight changes its record count, rate and status while the page is
+    // open, so keep up with it the way the task list does instead of freezing on
+    // the mount-time snapshot.
+    useEffect(() => {
+        const id = setInterval(() => {
+            if (!pending.current && !failed.current) {
+                silentRefresh.current = true;
+                setPollToken(value => value + 1);
+            }
+        }, 12000);
+
+        return () => clearInterval(id);
+    }, []);
 
     const visibleData = dataTaskId === taskid ? data : [];
 

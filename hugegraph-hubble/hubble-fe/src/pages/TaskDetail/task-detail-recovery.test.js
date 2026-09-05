@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import TaskDetail from './index';
 import * as api from '../../api';
 
@@ -68,6 +68,7 @@ beforeAll(() => {
 afterEach(() => {
     mockTaskId = '42';
     jest.clearAllMocks();
+    jest.useRealTimers();
 });
 
 it('uses the import-task title and recovers a failed run list', async () => {
@@ -156,4 +157,31 @@ it('does not restore task A when its response arrives after task B', async () =>
     await Promise.resolve();
     expect(screen.queryByText('11')).not.toBeInTheDocument();
     expect(screen.getByText('22')).toBeInTheDocument();
+});
+
+it('keeps the run list up to date while the page stays open', async () => {
+    jest.useFakeTimers();
+    api.manage.getJobsList
+        .mockResolvedValueOnce({
+            status: 200,
+            data: {records: [{job_id: 11, job_status: 'RUNNING'}]},
+        })
+        .mockResolvedValueOnce({
+            status: 200,
+            data: {records: [{job_id: 11, job_status: 'SUCCEED'}]},
+        });
+
+    const {unmount} = render(<TaskDetail />);
+    await act(async () => Promise.resolve());
+    expect(screen.getByText('Running')).toBeInTheDocument();
+
+    await act(async () => {
+        jest.advanceTimersByTime(12000);
+    });
+    expect(api.manage.getJobsList).toHaveBeenCalledTimes(2);
+
+    await act(async () => Promise.resolve());
+    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(screen.queryByText('Running')).not.toBeInTheDocument();
+    unmount();
 });
