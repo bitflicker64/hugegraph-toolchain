@@ -19,7 +19,7 @@
 import {Modal, Input, Form, message} from 'antd';
 import * as rules from '../../utils/rules';
 import * as api from '../../api';
-import {useState, useCallback} from 'react';
+import {useEffect, useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 
 const EditLayer = ({visible, onCancel, data, refresh}) => {
@@ -51,6 +51,16 @@ const EditLayer = ({visible, onCancel, data, refresh}) => {
         });
     }, [form, onCancel, refresh]);
 
+    useEffect(() => {
+        if (!visible) {
+            return;
+        }
+
+        // Reopen on the stored profile instead of the abandoned draft and its errors.
+        form.resetFields();
+        form.setFieldsValue(data);
+    }, [data, form, visible]);
+
     return (
         <Modal
             title={t('my.edit_profile_title')}
@@ -59,11 +69,13 @@ const EditLayer = ({visible, onCancel, data, refresh}) => {
             onOk={onFinish}
             confirmLoading={loading}
             width={600}
+            destroyOnClose
         >
             <Form
                 labelCol={{span: 6}}
                 initialValues={data}
                 form={form}
+                preserve={false}
             >
                 <Form.Item label={t('my.col.id')} name='user_name'><Input disabled /></Form.Item>
                 <Form.Item

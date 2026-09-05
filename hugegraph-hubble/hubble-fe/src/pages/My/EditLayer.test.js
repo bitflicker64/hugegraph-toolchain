@@ -92,3 +92,25 @@ test('handles the rejected validation promise instead of leaking it to the page'
     expect(api.auth.updatePersonal).not.toHaveBeenCalled();
     expect(rejections).toEqual([]);
 });
+
+test('reopens the profile modal on the stored values without the abandoned draft', async () => {
+    const view = render(<EditLayer {...props} />);
+
+    fireEvent.change(screen.getByDisplayValue('Administrator'), {
+        target: {value: 'bad name with spaces'},
+    });
+    await act(async () => {
+        fireEvent.click(okButton());
+    });
+    await flush();
+    expect(document.querySelector('.ant-form-item-has-error')).not.toBeNull();
+
+    view.rerender(<EditLayer {...props} visible={false} />);
+    await flush();
+    view.rerender(<EditLayer {...props} />);
+    await flush();
+
+    expect(screen.getByDisplayValue('Administrator')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('bad name with spaces')).not.toBeInTheDocument();
+    expect(document.querySelector('.ant-form-item-has-error')).toBeNull();
+});
