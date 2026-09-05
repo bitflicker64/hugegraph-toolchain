@@ -429,12 +429,15 @@ it('asks the backend to order favorites by the column that was clicked', async (
     );
     await waitForInitialData();
 
-    fireEvent.click(screen.getByRole('button', {name: 'Sort favorites by name'}));
+    await act(async () => {
+        fireEvent.click(screen.getByRole('button', {name: 'Sort favorites by name'}));
+        await Promise.resolve();
+    });
 
-    await waitFor(() => expect(api.analysis.fetchFavoriteQueries)
+    expect(api.analysis.fetchFavoriteQueries)
         .toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', expect.objectContaining({
             name_order: 'asc',
-        })));
+        }));
     const calls = api.analysis.fetchFavoriteQueries.mock.calls;
     expect(calls[calls.length - 1][2]).not.toHaveProperty('time_order');
 });
