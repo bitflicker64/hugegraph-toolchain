@@ -31,6 +31,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import * as api from '../../../api';
+import style from '../index.module.scss';
 import * as rules from '../../../utils/rules';
 import {isPdEnabled} from '../../../utils/config';
 import {
@@ -474,6 +475,7 @@ const BaseForm = ({cancel, visible, loading}) => {
                     </Space>
                 </Form.Item>
                 <Alert
+                    className={style.demo_alert}
                     showIcon
                     type='info'
                     message={t('task.edit.demo_title')}

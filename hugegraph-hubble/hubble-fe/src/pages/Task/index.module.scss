@@ -76,3 +76,16 @@
     text-align: center;
     white-space: nowrap;
 }
+
+.demo_alert {
+    // antd sizes the alert content column with `flex: 1 1 0%`, so it claims no width
+    // of its own and the demo button group keeps everything it can, squeezing the
+    // title and description down to one character per line. Give the content a real
+    // basis and let the buttons drop onto their own line when they no longer fit.
+    flex-wrap: wrap;
+    row-gap: 8px;
+
+    :global(.ant-alert-content) {
+        flex: 1 1 240px;
+    }
+}

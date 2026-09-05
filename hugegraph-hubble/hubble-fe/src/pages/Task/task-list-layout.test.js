@@ -68,3 +68,17 @@ test('declares bounded task column widths and nowrap overflow behavior', () => {
         /\.no_wrap\s*\{[\s\S]*text-overflow:\s*ellipsis/
     );
 });
+
+test('keeps the demo alert text column from collapsing under its button group', () => {
+    // antd only gives `.ant-alert-content` `flex: 1 1 0%`, so without a basis of its
+    // own the demo button group takes the whole row and the text renders one
+    // character per line. Browser evidence is needed for the rendered height; this
+    // pins the contract that produces it.
+    expect(component).toContain('className={style.demo_alert}');
+    expect(stylesheet).toMatch(
+        /\.demo_alert\s*\{[\s\S]*flex-wrap:\s*wrap/
+    );
+    expect(stylesheet).toMatch(
+        /\.demo_alert\s*\{[\s\S]*\.ant-alert-content[\s\S]*flex:\s*1\s+1\s+240px/
+    );
+});

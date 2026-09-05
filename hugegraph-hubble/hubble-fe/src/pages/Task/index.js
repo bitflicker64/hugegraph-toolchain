@@ -590,6 +590,7 @@ const Task = () => {
 
             <div className='container'>
                 <Alert
+                    className={style.demo_alert}
                     showIcon
                     type='info'
                     message={t('task.demo.title')}
