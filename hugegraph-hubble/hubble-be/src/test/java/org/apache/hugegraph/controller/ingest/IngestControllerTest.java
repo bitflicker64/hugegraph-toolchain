@@ -373,6 +373,81 @@ public class IngestControllerTest {
     }
 
     @Test
+    public void testJobListExplainsTheRecordsTheLoadRejected()
+           throws Exception {
+        String reason = "Failed to convert vertex id 'alice'";
+        TestIngestController controller = new TestIngestController();
+        FileMapping mapping = new FileMapping();
+        LoadTaskService loadTaskService = this.mockJobListServices(
+                controller, LoadStatus.SUCCEED, mapping);
+        Mockito.when(loadTaskService.readLoadFailedReason(mapping))
+               .thenReturn(reason);
+
+        Response response = controller.jobList(7, 1, 10);
+
+        Assert.assertEquals(reason, this.firstJob(response).jobMessage);
+    }
+
+    @Test
+    public void testJobListLeavesDetailsEmptyForACleanImport()
+           throws Exception {
+        TestIngestController controller = new TestIngestController();
+        FileMapping mapping = new FileMapping();
+        LoadTaskService loadTaskService = this.mockJobListServices(
+                controller, LoadStatus.SUCCEED, mapping);
+        Mockito.when(loadTaskService.readLoadFailedReason(mapping))
+               .thenReturn(LoadTaskService.NO_ERROR_FILE_REASON);
+
+        Response response = controller.jobList(7, 1, 10);
+
+        Assert.assertEquals("", this.firstJob(response).jobMessage);
+    }
+
+    private LoadTaskService mockJobListServices(TestIngestController controller,
+                                                LoadStatus status,
+                                                FileMapping mapping)
+                                                throws Exception {
+        LoadTaskService loadTaskService = Mockito.mock(LoadTaskService.class);
+        JobManagerService jobManagerService =
+                Mockito.mock(JobManagerService.class);
+        FileMappingService fileMappingService =
+                Mockito.mock(FileMappingService.class);
+        this.setField(controller, "loadTaskService", loadTaskService);
+        this.setField(controller, "jobManagerService", jobManagerService);
+        this.setField(controller, "fileMappingService", fileMappingService);
+
+        Mockito.when(jobManagerService.get(7))
+               .thenReturn(JobManager.builder()
+                                     .id(7)
+                                     .graphSpace("DEFAULT")
+                                     .graph("hugegraph")
+                                     .build());
+        Mockito.when(loadTaskService.taskListByJob(7))
+               .thenReturn(Collections.singletonList(
+                       LoadTask.builder()
+                               .id(9)
+                               .jobId(7)
+                               .fileId(8)
+                               .status(status)
+                               .fileReadLines(4L)
+                               .lastDuration(0L)
+                               .currDuration(0L)
+                               .build()));
+        Mockito.when(fileMappingService.get("DEFAULT", "hugegraph", 7, 8))
+               .thenReturn(mapping);
+        return loadTaskService;
+    }
+
+    private IngestController.JobVO firstJob(Response response) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) response.getData();
+        @SuppressWarnings("unchecked")
+        List<IngestController.JobVO> records =
+                (List<IngestController.JobVO>) data.get("records");
+        return records.get(0);
+    }
+
+    @Test
     public void testTaskListFiltersProtectedGraphSpacesInAnonymousMode()
            throws Exception {
         TestIngestController controller = new TestIngestController();

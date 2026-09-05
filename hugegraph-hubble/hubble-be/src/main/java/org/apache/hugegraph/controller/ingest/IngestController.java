@@ -98,6 +98,10 @@ public class IngestController extends BaseController {
             new ObjectMapper().disable(
                     JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
 
+    // An error file holds one line per rejected record, keep the list
+    // response bounded
+    private static final int JOB_MESSAGE_MAX_LENGTH = 2000;
+
     @Autowired
     private JobManagerService jobManagerService;
     @Autowired
@@ -435,7 +439,7 @@ public class IngestController extends BaseController {
             vo.jobId = t.getId();
             vo.taskId = t.getJobId();
             vo.jobStatus = t.getStatus().name();
-            vo.jobMessage = "";
+            vo.jobMessage = this.jobMessage(job, t);
             vo.createTime = t.getCreateTime();
 
             JobMetricsVO metrics = new JobMetricsVO();
@@ -458,6 +462,36 @@ public class IngestController extends BaseController {
         result.put("current", pageNo);
 
         return Response.builder().status(Constant.STATUS_OK).data(result).build();
+    }
+
+    /**
+     * Why a load run did not store everything, taken from the error files the
+     * loader writes beside the source. A run can finish as SUCCEED and still
+     * have rejected every row, so the reason is reported whenever there is
+     * one. An empty string means there is genuinely nothing to report.
+     */
+    private String jobMessage(JobManager job, LoadTask task) {
+        boolean failed = task.getStatus() == LoadStatus.FAILED;
+        FileMapping mapping = task.getFileId() == null ? null :
+                              this.fileMappingService.get(job.getGraphSpace(),
+                                                          job.getGraph(),
+                                                          job.getId(),
+                                                          task.getFileId());
+        String reason;
+        try {
+            reason = mapping == null ?
+                     LoadTaskService.NO_ERROR_FILE_REASON :
+                     this.loadTaskService.readLoadFailedReason(mapping);
+        } catch (RuntimeException e) {
+            log.warn("Failed to read the error files of load task {}",
+                     task.getId(), e);
+            reason = LoadTaskService.NO_ERROR_FILE_REASON;
+        }
+        if (LoadTaskService.NO_ERROR_FILE_REASON.equals(reason)) {
+            // Nothing was rejected, so only an outright failure needs a note
+            return failed ? reason : "";
+        }
+        return StringUtils.abbreviate(reason, JOB_MESSAGE_MAX_LENGTH);
     }
 
     @GetMapping("/jobs/{id}")
