@@ -185,6 +185,20 @@ test('uses one list-mode create button and keeps page size at eleven', async () 
     ));
 });
 
+test('names the built-in GraphSpace the same way in both view modes', async () => {
+    api.manage.getGraphSpaceList.mockResolvedValue({
+        status: 200,
+        data: {records: [{name: 'DEFAULT', nickname: '默认图空间'}], total: 1},
+    });
+
+    render(<GraphSpace />);
+    await screen.findByText('默认图空间:manage');
+    fireEvent.click(screen.getByLabelText('common.label.list_mode'));
+
+    expect(await screen.findByText('graphspace.default_name')).toBeInTheDocument();
+    expect(screen.queryByText('默认图空间')).not.toBeInTheDocument();
+});
+
 test('hides the list-mode create button for ordinary users and load failures', async () => {
     user.getUser.mockReturnValue({is_superadmin: false, adminSpaces: []});
     mockAuthContext = {

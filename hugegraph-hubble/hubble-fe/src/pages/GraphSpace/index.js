@@ -44,6 +44,7 @@ import style from './index.module.scss';
 import * as api from '../../api/index';
 import {useAuthContext} from '../../auth/AuthContext';
 import {getResourceDisplayName} from '../../utils/displayName';
+import {DEFAULT_GRAPHSPACE} from '../../utils/productMode';
 import {TopbarPageContextSlot} from '../../components/Topbar/PageContextSlot';
 
 const PAGE_ERROR_CONFIG = {suppressBusinessErrorToast: true};
@@ -162,7 +163,9 @@ const GraphSpace = () => {
             render: row => (
                 <>
                     <Link to={`/graphspace/${row.name}`}>
-                        {getResourceDisplayName(row.name, row.nickname)}
+                        {row.name === DEFAULT_GRAPHSPACE
+                            ? t('graphspace.default_name')
+                            : getResourceDisplayName(row.name, row.nickname)}
                     </Link>
                     {row.default && <span className={style.default}>{t('common.label.default')}</span>}
                 </>
