@@ -167,6 +167,29 @@ test('keeps a filtered empty result distinct from the create card', async () => 
     expect(screen.getByRole('button', {name: 'graphspace.create'})).toBeEnabled();
 });
 
+test('explains a filtered empty result in list mode too', async () => {
+    api.manage.getGraphSpaceList
+        .mockResolvedValueOnce({
+            status: 200,
+            data: {records: [{name: 'space-a', nickname: 'Space A'}], total: 1},
+        })
+        .mockResolvedValue({status: 200, data: {records: [], total: 0}});
+
+    render(<GraphSpace />);
+    await screen.findByText('Space A:manage');
+    await userEvent.type(
+        screen.getByPlaceholderText('graphspace.search_placeholder'),
+        'missing{enter}'
+    );
+    await screen.findByText('graphspace.no_matches');
+
+    fireEvent.click(screen.getByLabelText('common.label.list_mode'));
+
+    expect(await screen.findByText('graphspace.no_matches')).toBeInTheDocument();
+    await waitFor(() => expect(document.querySelector('.ant-table-placeholder'))
+        .toHaveTextContent('graphspace.no_matches'));
+});
+
 test('uses one list-mode create button and keeps page size at eleven', async () => {
     api.manage.getGraphSpaceList.mockResolvedValue({
         status: 200,

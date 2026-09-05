@@ -252,6 +252,14 @@ const GraphSpace = () => {
         },
     ];
 
+    const emptyState = (
+        <Empty
+            description={t(graphspacename || dateData
+                ? 'graphspace.no_matches'
+                : 'graphspace.empty')}
+        />
+    );
+
     const {current, pageSize} = pagination;
 
     const loadGraphspaces = useCallback(async () => {
@@ -370,11 +378,7 @@ const GraphSpace = () => {
                                 <Row gutter={[10, 10]} justify='start'>
                                     {!loading && !listError && data.length === 0 && (
                                         <Col span={canCreateGraphspace ? 16 : 24}>
-                                            <Empty
-                                                description={t(graphspacename || dateData
-                                                    ? 'graphspace.no_matches'
-                                                    : 'graphspace.empty')}
-                                            />
+                                            {emptyState}
                                         </Col>
                                     )}
                                     {data.map(item => {
@@ -429,6 +433,8 @@ const GraphSpace = () => {
                                     columns={columns}
                                     dataSource={data}
                                     rowKey='name'
+                                    locale={{emptyText: loading || listError
+                                        ? null : emptyState}}
                                     pagination={pagination}
                                     onChange={handleTable}
                                 />
