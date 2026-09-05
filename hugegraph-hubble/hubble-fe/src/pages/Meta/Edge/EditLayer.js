@@ -313,7 +313,7 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
                                             style={{marginBottom: 0}}
                                         >
                                             <Select
-                                                style={{width: 66}}
+                                                style={{width: 110}}
                                                 size="medium"
                                                 options={edgeSizeSchemas}
                                             />

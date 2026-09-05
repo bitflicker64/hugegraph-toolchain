@@ -245,15 +245,14 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
                                     style={{marginBottom: 0}}
                                 >
                                     <Select
-                                        style={{width: 66}}
+                                        style={{width: 110}}
                                         // size="small"
                                         options={vertexSizeSchemas}
                                     />
                                 </Form.Item>
                             </Col>
-                            <Col>
+                            <Col style={{width: 140}}>
                                 <Form.Item
-                                    wrapperCol={{span: 10}}
                                     name={['style', 'icon']}
                                     rules={[rules.required()]}
                                     style={{marginBottom: 0}}
