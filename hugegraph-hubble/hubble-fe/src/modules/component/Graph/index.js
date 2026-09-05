@@ -27,7 +27,6 @@ import '@antv/graphin-icons/dist/index.css';
 import _ from 'lodash';
 import {GraphContext} from '../Context';
 import ResizeObserver from 'resize-observer-polyfill';
-import classnames from 'classnames';
 import {fitView, mapLayoutNameToLayoutDetails} from '../../../utils/graph';
 import {
     clearEdgesStates,
@@ -55,7 +54,6 @@ const Graph = (props, ref) => {
         data,
         layout: layoutOptions,
         onGraphRender,
-        isPanelEnable,
         onNodeClick,
         onEdgeClick,
         onNodedbClick,
@@ -127,11 +125,6 @@ const Graph = (props, ref) => {
             }, 500);
         },
         []
-    );
-
-    const graphClassName = classnames(
-        c.graph,
-        {[c.layoutPanelOpen]: isPanelEnable}
     );
 
     const syncGraphData = useCallback(
@@ -343,7 +336,7 @@ const Graph = (props, ref) => {
         <GraphContext.Provider value={context}>
             <div
                 ref={container}
-                className={graphClassName}
+                className={c.graph}
                 id={'graph'}
                 tabIndex={0}
                 aria-label={t('analysis.canvas.graph_canvas')}
