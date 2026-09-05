@@ -18,7 +18,7 @@
 
 import {render} from '@testing-library/react';
 import {GraphinContext} from '@antv/graphin';
-import {GraphDoubleClick} from './index';
+import {GraphDoubleClick, GraphResizeGuard} from './index';
 
 jest.mock('@antv/graphin', () => {
     const React = require('react');
@@ -72,4 +72,35 @@ test('registers, dispatches and removes node and edge double-click listeners', (
     expect(graph.off).toHaveBeenCalledWith(
         'edge:dblclick', listeners.get('edge:dblclick')
     );
+});
+
+test('keeps a late resize from throwing on a graph destroyed by unmount', () => {
+    const graph = {
+        cfg: {width: 500, height: 600},
+        destroyed: false,
+        set(key, value) {
+            this.cfg[key] = value;
+        },
+        get(key) {
+            return this.cfg?.[key];
+        },
+    };
+    const {unmount} = render(
+        <GraphinContext.Provider value={{graph}}>
+            <GraphResizeGuard />
+        </GraphinContext.Provider>
+    );
+
+    // Graphin destroys the G6 instance in componentWillUnmount, which runs
+    // before React flushes the cleanups of the tree it has just deleted.
+    graph.destroyed = true;
+    graph.cfg = null;
+    unmount();
+
+    // What Graphin's debounced ResizeCanvas handler does once it finally fires.
+    expect(() => {
+        graph.set('width', 0);
+        graph.set('height', 0);
+    }).not.toThrow();
+    expect(graph.get('canvas')).toBeUndefined();
 });

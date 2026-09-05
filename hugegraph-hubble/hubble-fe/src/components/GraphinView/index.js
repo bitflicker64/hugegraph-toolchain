@@ -51,6 +51,29 @@ const GraphDoubleClick = ({onDoubleClick}) => {
     return null;
 };
 
+/**
+ * Graphin always mounts its ResizeCanvas behaviour, which debounces the window
+ * resize event by 200ms and then runs graph.set('width', ...). Unmounting
+ * Graphin destroys the G6 instance first and leaves graph.cfg null, so a resize
+ * queued by the disappearing canvas still reaches that setter and throws
+ * "Cannot set properties of null (setting 'width')". Handing the destroyed
+ * instance an empty cfg back makes the late write land on an object nobody
+ * reads; the rest of that handler already guards on graph.get('canvas').
+ */
+const GraphResizeGuard = () => {
+    const {graph} = useContext(GraphinContext);
+
+    useEffect(() => {
+        return () => {
+            if (graph?.destroyed && !graph.cfg) {
+                graph.cfg = {};
+            }
+        };
+    }, [graph]);
+
+    return null;
+};
+
 const GraphView =  ({
     data,
     width,
@@ -103,6 +126,7 @@ const GraphView =  ({
                 <Hoverable bindType="edge" {...behaviors?.hoverable} />
                 <Hoverable bindType="node" {...behaviors?.hoverable} />
                 <GraphDoubleClick onDoubleClick={onDoubleClick} />
+                <GraphResizeGuard />
                 {nodeTooltip && (
                     <Components.Tooltip bindType='node' style={GRAPH_TOOLTIP_STYLE}>
                         {nodeTooltip}
@@ -121,4 +145,4 @@ const GraphView =  ({
 
 export default GraphView;
 
-export {GraphDoubleClick};
+export {GraphDoubleClick, GraphResizeGuard};
