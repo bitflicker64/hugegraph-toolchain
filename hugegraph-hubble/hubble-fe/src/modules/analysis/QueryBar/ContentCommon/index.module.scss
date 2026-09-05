@@ -76,6 +76,12 @@
     position: relative;
 }
 
+.favoriteError {
+    margin-top: 4px;
+    color: #ff4d4f;
+    font-size: 12px;
+}
+
 .favoriteModel {
     :global(.ant-popover-content) {
         width: 368px;

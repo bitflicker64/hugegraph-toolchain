@@ -15,7 +15,7 @@
  * under the License.
  */
 
-import {fireEvent, render, screen} from '@testing-library/react';
+import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import * as api from '../../../../api/index';
 import ContentCommon from './index';
 import GraphAnalysisContext from '../../../Context';
@@ -111,7 +111,7 @@ it('places clear before favorite in the secondary action group', () => {
         .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 });
 
-it('keeps favorite submission disabled until the name is backend-compatible', () => {
+it('keeps favorite submission disabled until the name is backend-compatible', async () => {
     renderContent({favoriteCardVisible: true});
     const input = screen.getByPlaceholderText('analysis.query.favorite_name_placeholder');
     const submit = screen.getAllByRole('button', {name: 'analysis.query.favorite'})
@@ -129,5 +129,50 @@ it('keeps favorite submission disabled until the name is backend-compatible', ()
     fireEvent.change(input, {target: {value: 'query_name'}});
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
-    expect(api.analysis.addFavoriate).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+        expect(api.analysis.addFavoriate).toHaveBeenCalledTimes(1));
+});
+
+const openFavoriteDialog = () => {
+    const props = renderContent({favoriteCardVisible: true});
+    return {
+        props,
+        input: screen.getByPlaceholderText('analysis.query.favorite_name_placeholder'),
+        submit: screen.getAllByRole('button', {name: 'analysis.query.favorite'})
+            .find(button => button.closest('.ant-popover')),
+    };
+};
+
+it('keeps the favorite dialog and the typed name when the save is rejected', async () => {
+    api.analysis.addFavoriate.mockResolvedValue({
+        status: 400,
+        message: 'Already exists gremlin statement with same name fav_a',
+    });
+    const {props, input, submit} = openFavoriteDialog();
+
+    fireEvent.change(input, {target: {value: 'fav_a'}});
+    fireEvent.click(submit);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Already exists gremlin statement with same name fav_a'
+    );
+    expect(props.setFavoriteCardVisible).not.toHaveBeenCalledWith(false);
+    expect(input).toHaveValue('fav_a');
+    expect(props.onRefresh).not.toHaveBeenCalled();
+
+    // Editing the name clears the stale rejection so the retry starts clean.
+    fireEvent.change(input, {target: {value: 'fav_b'}});
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it('closes the favorite dialog once the save is accepted', async () => {
+    const {props, input, submit} = openFavoriteDialog();
+
+    fireEvent.change(input, {target: {value: 'fav_ok'}});
+    fireEvent.click(submit);
+
+    await waitFor(() =>
+        expect(props.setFavoriteCardVisible).toHaveBeenCalledWith(false));
+    expect(props.onRefresh).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });

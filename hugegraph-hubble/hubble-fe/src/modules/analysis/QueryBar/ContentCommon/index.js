@@ -54,6 +54,8 @@ const SecondaryActions = props => {
     const context = useContext(GraphAnalysisContext);
     const [favoriteName, setFavoriteName] = useState();
     const [disabledFavorite, setDisabledFavorite] = useState(true);
+    const [favoriteError, setFavoriteError] = useState();
+    const [isSavingFavorite, setSavingFavorite] = useState(false);
     const emptyDesc = t('analysis.query.empty_query');
 
     const onClear = useCallback(
@@ -68,37 +70,50 @@ const SecondaryActions = props => {
             setFavoriteCardVisible(true);
             setDisabledFavorite(true);
             setFavoriteName('');
+            setFavoriteError();
         },
         [setFavoriteCardVisible]
     );
 
     const saveFavoriteList = useCallback(
-        () => {
+        async () => {
             const {graphSpace, graph} = context;
             const params = {
                 content: codeEditorContent,
                 name: favoriteName,
                 type: FAVORITE_TYPE[activeTab],
             };
-            api.analysis.addFavoriate(graphSpace, graph, params)
-                .then(res => {
-                    const {status, message: errMsg} = res;
-                    if (status === 200) {
-                        message.success(t('analysis.query.favorite_success'));
-                        onRefresh();
-                    }
-                    else {
-                        !errMsg && message.error(t('analysis.query.favorite_failed'));
-                    }
-                });
+            setSavingFavorite(true);
+            try {
+                const res = await api.analysis.addFavoriate(graphSpace, graph, params);
+                const {status, message: errMsg} = res || {};
+                if (status === 200) {
+                    message.success(t('analysis.query.favorite_success'));
+                    onRefresh();
+                    return true;
+                }
+                // request.js has already toasted this, but that toast is transient:
+                // keep the reason beside the input so the name can be corrected.
+                setFavoriteError(errMsg || t('analysis.query.favorite_failed'));
+                return false;
+            }
+            catch {
+                setFavoriteError(t('analysis.query.favorite_failed'));
+                return false;
+            }
+            finally {
+                setSavingFavorite(false);
+            }
         },
         [activeTab, codeEditorContent, context, favoriteName, onRefresh, t]
     );
 
     const onOkFavorite = useCallback(
-        () => {
-            saveFavoriteList();
-            setFavoriteCardVisible(false);
+        async () => {
+            setFavoriteError();
+            if (await saveFavoriteList()) {
+                setFavoriteCardVisible(false);
+            }
         },
         [saveFavoriteList, setFavoriteCardVisible]
     );
@@ -106,6 +121,7 @@ const SecondaryActions = props => {
     const onHideFavorite = useCallback(
         () => {
             setFavoriteCardVisible(false);
+            setFavoriteError();
         },
         [setFavoriteCardVisible]
     );
@@ -115,6 +131,7 @@ const SecondaryActions = props => {
             const name = event.target.value;
             setFavoriteName(name);
             setDisabledFavorite(!isValidFavoriteName(name));
+            setFavoriteError();
         },
         []
     );
@@ -126,8 +143,16 @@ const SecondaryActions = props => {
                 value={favoriteName}
                 onChange={onChangeFavoriteName}
             />
+            {favoriteError && (
+                <div role='alert' className={c.favoriteError}>{favoriteError}</div>
+            )}
             <Space style={{marginTop: '24px'}}>
-                <Button type='primary' onClick={onOkFavorite} disabled={disabledFavorite}>
+                <Button
+                    type='primary'
+                    onClick={onOkFavorite}
+                    disabled={disabledFavorite || isSavingFavorite}
+                    loading={isSavingFavorite}
+                >
                     {t('analysis.query.favorite')}
                 </Button>
                 <Button onClick={onHideFavorite}>{t('common.action.cancel')}</Button>
