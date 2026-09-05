@@ -194,10 +194,12 @@ const GraphContextSwitcher = () => {
         };
     }, [context.graphspace, navigate, pdEnabled, reloadTokens.graphs]);
 
+    const staleGraphspace = pdEnabled && !loading.graphspaces && !errors.graphspaces
+        && Boolean(context.graphspace)
+        && !graphspaces.some(item => item.name === context.graphspace);
+
     useEffect(() => {
-        if (!pdEnabled || loading.graphspaces || errors.graphspaces || !context.graphspace || (
-            graphspaces.some(item => item.name === context.graphspace)
-        )) {
+        if (!staleGraphspace) {
             return;
         }
 
@@ -207,19 +209,14 @@ const GraphContextSwitcher = () => {
         if (!REPORTS_MISSING_GRAPHSPACE.test(pathnameRef.current)) {
             navigate('/navigation', {replace: true});
         }
-    }, [
-        context.graphspace,
-        errors.graphspaces,
-        graphspaces,
-        loading.graphspaces,
-        navigate,
-        pdEnabled,
-    ]);
+    }, [navigate, staleGraphspace]);
 
+    // Waits for the GraphSpace to be confirmed present: reconciling the graph first
+    // would navigate to /graphspace/:gs for a GraphSpace that is itself gone, and that
+    // route reports a missing GraphSpace, so the bounce above would then be suppressed.
     useEffect(() => {
-        if (loading.graphs || errors.graphs || !context.graph || (
-            graphs.some(item => item.name === context.graph)
-        )) {
+        if (loading.graphspaces || staleGraphspace || loading.graphs || errors.graphs
+            || !context.graph || graphs.some(item => item.name === context.graph)) {
             return;
         }
 
@@ -238,7 +235,9 @@ const GraphContextSwitcher = () => {
         errors.graphs,
         graphs,
         loading.graphs,
+        loading.graphspaces,
         navigate,
+        staleGraphspace,
     ]);
 
     const graphspaceOptions = useMemo(() => {
