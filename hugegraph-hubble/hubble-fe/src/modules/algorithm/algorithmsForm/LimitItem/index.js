@@ -25,6 +25,10 @@ import {InputNumber} from 'antd';
 import Form from '../PersistentForm';
 import {limitValidator} from '../utils';
 
+// The server reads limit into a Java int, so a wider number is rejected by the
+// JSON parser with a raw Jackson dump instead of running the algorithm.
+const INT32_MAX = 2147483647;
+
 const LimitItem = props => {
     const {initialValue, desc} = props;
 
@@ -36,7 +40,7 @@ const LimitItem = props => {
             rules={[{validator: limitValidator}]}
             tooltip={desc}
         >
-            <InputNumber />
+            <InputNumber max={INT32_MAX} />
         </Form.Item>
     );
 };
