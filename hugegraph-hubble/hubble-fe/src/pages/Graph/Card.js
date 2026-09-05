@@ -23,7 +23,6 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import GraphView from '../../components/GraphinView';
 import moment from 'moment';
-import _ from 'lodash';
 import {formatToGraphInData} from '../../utils/formatGraphInData';
 import {isPdEnabled} from '../../utils/config';
 import style from './index.module.scss';
@@ -37,9 +36,9 @@ const TitleField = ({item, onClick, onKeyDown, schemaTypeCounts}) => {
     const graphspaceName = item.graphspace === 'DEFAULT'
         ? t('graphspace.default_name')
         : getResourceDisplayName(item.graphspace, item.graphspace_nickname);
-    const displayName = pdMode
-        ? `${_.truncate(graphspaceName, {length: 12})}-${_.truncate(graphName, {length: 12})}`
-        : graphName;
+    // Every card on this page belongs to the same GraphSpace, so a visible
+    // GraphSpace prefix only steals room from the graph name that tells the
+    // cards apart. Keep the qualified name in the tooltip.
     const fullTitle = pdMode
         ? `${graphspaceName}-${graphName}`
         : graphName;
@@ -58,7 +57,7 @@ const TitleField = ({item, onClick, onKeyDown, schemaTypeCounts}) => {
                 role='button'
                 tabIndex={0}
             >
-                {displayName}
+                {graphName}
             </Typography.Text>
             {item.default && <span className={style.default}>{t('common.label.default')}</span>}
             <div className={style.subtitle}>

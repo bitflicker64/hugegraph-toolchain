@@ -127,6 +127,9 @@ span.disable {
     min-height: 20px;
     color: #999;
     font-family: PingFangSC-Regular;
+    // The antd card head title clips its children on one line, which cut the
+    // schema counts off entirely. Let the metadata wrap instead.
+    white-space: normal;
 }
 
 .empty_demo_hint {

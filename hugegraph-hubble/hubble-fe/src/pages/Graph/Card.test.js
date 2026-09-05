@@ -77,6 +77,29 @@ test('falls back to the graph name when a PD graph has no alias', () => {
         .toBeInTheDocument();
 });
 
+test('keeps the whole graph name visible instead of a truncated prefix', () => {
+    render(
+        <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+            <GraphCard
+                item={{
+                    name: 'hubble_test_connection',
+                    nickname: null,
+                    graphspace: 'DEFAULT',
+                    graphspace_nickname: '默认图空间',
+                    storage: 0,
+                    create_time: '2026-07-12',
+                    schemaview: {vertices: [], edges: []},
+                }}
+                menus={[]}
+            />
+        </MemoryRouter>
+    );
+
+    expect(screen.getByText('hubble_test_connection')).toBeInTheDocument();
+    expect(screen.getByTitle('graphspace.default_name-hubble_test_connection'))
+        .toBeInTheDocument();
+});
+
 test('treats backend nickname echoes as unset aliases', () => {
     render(
         <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
