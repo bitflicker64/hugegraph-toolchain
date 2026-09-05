@@ -20,6 +20,26 @@ import path from 'path';
 
 const stylesheet = fs.readFileSync(path.join(__dirname, 'index.module.scss'), 'utf8');
 
+const mediaBlock = query => {
+    const start = stylesheet.indexOf(`@media ${query}`);
+    if (start === -1) {
+        return '';
+    }
+    let depth = 0;
+    for (let index = stylesheet.indexOf('{', start); index < stylesheet.length; index++) {
+        if (stylesheet[index] === '{') {
+            depth += 1;
+        }
+        else if (stylesheet[index] === '}') {
+            depth -= 1;
+            if (depth === 0) {
+                return stylesheet.slice(start, index + 1);
+            }
+        }
+    }
+    return '';
+};
+
 const ruleBody = selector => {
     const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return stylesheet.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`))?.[1] || '';
@@ -38,4 +58,17 @@ it('keeps shortcut hints in a compact top corner overlay outside code flow', () 
     expect(shortcutRule).not.toMatch(/\bleft:/);
     expect(shortcutRule).toMatch(/max-width:\s*calc\(100% - 128px\)/);
     expect(shortcutRule).toMatch(/pointer-events:\s*none/);
+});
+
+it('hides the shortcut hint on the widths where it would cover the statement', () => {
+    const smallLayout = mediaBlock('(max-width: 1366px)');
+
+    expect(smallLayout).toMatch(
+        /\.editorShortcutHints\s*\{[^}]*visibility:\s*hidden/
+    );
+    expect(smallLayout).toMatch(
+        /:global\(\.cm-content\)\s*\{[^}]*padding-right:\s*112px/
+    );
+    // Nudging the overlay sideways never cleared the code, so it must not come back.
+    expect(smallLayout).not.toMatch(/right:\s*96px/);
 });

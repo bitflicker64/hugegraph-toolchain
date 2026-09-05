@@ -128,12 +128,9 @@
         display: none !important;
     }
 
-    .editorShortcutHints {
-        right: 96px;
-    }
-}
-
-@media (max-width: 900px) {
+    /* Narrower than this the statement reaches the overlay, and a statement long
+       enough to scroll horizontally runs straight underneath it, so hide the hint
+       and give the space it reserved back to the code. */
     .editorShell :global(.cm-content) {
         padding-right: 112px;
     }
