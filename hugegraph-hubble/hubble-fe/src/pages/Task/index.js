@@ -52,7 +52,7 @@ import {sourceType, syncType} from './config';
 import TableHeader from '../../components/TableHeader';
 import DataPreparationNav from '../../components/DataPreparationNav';
 import {readWorkbenchGraphContext} from '../../utils/workbenchGraphContext';
-import {TaskStatus} from './status';
+import {isTaskInProgress, TaskStatus} from './status';
 
 const {Text} = Typography;
 
@@ -143,7 +143,10 @@ const RunningText = ({status, onClick, data}) => {
 
 const TaskActions = ({row, onView, onEdit, onEnable, onDisable, onDelete}) => {
     const {t} = useTranslation();
-    const canEditOrDelete = row.task_schedule_status === 'DISABLE';
+    // `task_schedule_status` only reports whether the schedule is enabled, and it
+    // stays ENABLE for every task that has not been paused, finished ones included.
+    // What makes editing or deleting unsafe is an execution still in flight.
+    const canEditOrDelete = !isTaskInProgress(row.last_metrics);
     const handleView = useCallback(() => onView(row), [onView, row]);
     const handleEdit = useCallback(() => onEdit(row), [onEdit, row]);
     const handleDelete = useCallback(() => {

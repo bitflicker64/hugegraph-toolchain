@@ -49,6 +49,14 @@ const getTaskStatus = status => {
     return TASK_STATUS_CONFIG[normalized] ?? {key: 'unknown'};
 };
 
+// True while the task's latest execution has not reached a terminal state, i.e.
+// while it is queued or importing. Everything else, including a task that has
+// never run, is settled.
+const isTaskInProgress = status => {
+    const {key} = getTaskStatus(status);
+    return key === 'running' || key === 'pending';
+};
+
 const TaskStatus = ({status}) => {
     const {t} = useTranslation();
     const config = getTaskStatus(status);
@@ -60,4 +68,4 @@ const TaskStatus = ({status}) => {
     );
 };
 
-export {getTaskStatus, TaskStatus};
+export {getTaskStatus, isTaskInProgress, TaskStatus};

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {getTaskStatus} from './status';
+import {getTaskStatus, isTaskInProgress} from './status';
 
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => key}),
@@ -31,4 +31,16 @@ test.each([
     ['FAILED', 'failed'],
 ])('maps hubble-be JobStatus %s to the %s user state', (status, key) => {
     expect(getTaskStatus(status)).toEqual(expect.objectContaining({key}));
+});
+
+test.each([
+    [{status: 'RUNNING'}, true],
+    [{status: 'LOADING'}, true],
+    [{status: 'NEW'}, true],
+    [{status: 'SUCCEED'}, false],
+    [{status: 'FAILED'}, false],
+    [{status: 'PAUSED'}, false],
+    [undefined, false],
+])('reports %p as in progress: %s', (metrics, expected) => {
+    expect(isTaskInProgress(metrics)).toBe(expected);
 });

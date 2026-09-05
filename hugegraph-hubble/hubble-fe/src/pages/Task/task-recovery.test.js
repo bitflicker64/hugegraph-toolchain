@@ -232,15 +232,27 @@ it('gives every task-row action an accessible name and disables unsafe actions',
     api.manage.getTaskList.mockResolvedValue({
         status: 200,
         data: {
-            records: [{
-                task_id: 7,
-                task_name: 'nightly import',
-                ingestion_mapping: {structs: []},
-                ingestion_option: {graphspace: 'DEFAULT', graph: 'hugegraph'},
-                task_schedule_status: 'ENABLE',
-                task_schedule_type: 'ONCE',
-            }],
-            total: 1,
+            records: [
+                {
+                    task_id: 7,
+                    task_name: 'nightly import',
+                    ingestion_mapping: {structs: []},
+                    ingestion_option: {graphspace: 'DEFAULT', graph: 'hugegraph'},
+                    task_schedule_status: 'ENABLE',
+                    task_schedule_type: 'ONCE',
+                    last_metrics: {status: 'RUNNING'},
+                },
+                {
+                    task_id: 8,
+                    task_name: 'finished import',
+                    ingestion_mapping: {structs: []},
+                    ingestion_option: {graphspace: 'DEFAULT', graph: 'hugegraph'},
+                    task_schedule_status: 'ENABLE',
+                    task_schedule_type: 'ONCE',
+                    last_metrics: {status: 'SUCCEED'},
+                },
+            ],
+            total: 2,
             size: 10,
         },
     });
@@ -248,15 +260,21 @@ it('gives every task-row action an accessible name and disables unsafe actions',
 
     render(<Task />);
 
-    expect(await screen.findByRole('link', {
+    expect(await screen.findAllByRole('link', {
         name: 'View execution history',
-    })).toBeInTheDocument();
-    expect(screen.getByRole('button', {
+    })).toHaveLength(2);
+    expect(screen.getAllByRole('button', {
         name: 'View task information',
-    })).toBeEnabled();
-    expect(screen.getByRole('button', {name: 'Edit task'})).toBeDisabled();
-    expect(screen.getByRole('button', {name: 'Pause task'})).toBeEnabled();
-    expect(screen.getByRole('button', {name: 'Delete task'})).toBeDisabled();
+    })[0]).toBeEnabled();
+    const [runningEdit, finishedEdit] = screen.getAllByRole('button', {name: 'Edit task'});
+    const [runningDelete, finishedDelete] = screen.getAllByRole('button', {name: 'Delete task'});
+    // A run in flight is the only reason to withhold these; a finished one-time
+    // task must not have to be paused first.
+    expect(runningEdit).toBeDisabled();
+    expect(runningDelete).toBeDisabled();
+    expect(finishedEdit).toBeEnabled();
+    expect(finishedDelete).toBeEnabled();
+    expect(screen.getAllByRole('button', {name: 'Pause task'})[0]).toBeEnabled();
     expect(screen.queryByRole('columnheader', {name: 'Creator'}))
         .not.toBeInTheDocument();
 });
