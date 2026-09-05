@@ -332,7 +332,8 @@ const SystemMetricContent = ({values = {}}) => {
     );
 };
 
-const MetricGroup = ({group, name, values, status = {}, emptyMessage}) => {
+const MetricGroup = ({group, name, values, status = {}, emptyMessage,
+    showCapacity = true}) => {
     const {t, i18n} = useTranslation();
     const entries = values && typeof values === 'object' && !Array.isArray(values)
         ? Object.entries(values) : [];
@@ -395,7 +396,7 @@ const MetricGroup = ({group, name, values, status = {}, emptyMessage}) => {
             {statusDetails}
         </header>
     );
-    const capacity = capacitySummary(values);
+    const capacity = showCapacity ? capacitySummary(values) : null;
     if (visibleEntries.length === 0 && !capacity) {
         return (
             <section className='operations-surface operations-metric-group'>
@@ -513,6 +514,12 @@ const NodeDetail = () => {
     );
     const source = data?.sources?.[SOURCE_BY_TYPE[node.type]] ?? {};
     const applicableMetricGroups = GROUPS_BY_TYPE[node.type] ?? [];
+    // A Store reports the same volume twice, as drive total/usable space and as
+    // backend capacity/available bytes, so only the first group that carries it
+    // draws the capacity bar.
+    const capacityGroup = applicableMetricGroups.find(
+        group => capacitySummary(node.metrics?.[group])
+    );
     const metricStatus = group => {
         const current = node.metric_statuses?.[group];
         if (current) {
@@ -611,6 +618,7 @@ const NodeDetail = () => {
                             name={metricGroupName(group, node.type, t)}
                             values={node.metrics?.[group]}
                             status={status}
+                            showCapacity={group === capacityGroup}
                         />
                     );
                 })}

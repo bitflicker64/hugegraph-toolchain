@@ -460,13 +460,16 @@ test('presents native metric labels, units and capacity instead of raw keys', as
     expect(runtime).toHaveTextContent('GC count4');
     expect(runtime).toHaveTextContent('GC time10 ms');
     expect(screen.queryByText(/mem total/)).not.toBeInTheDocument();
+    // One physical volume, reported by both the drive and the backend group.
     const capacity = screen.getAllByRole('progressbar', {name: 'Capacity usage'});
-    expect(capacity.some(item => item.getAttribute('aria-valuenow') === '75')).toBe(true);
-    expect(capacity.some(item => item.getAttribute('aria-valuenow') === '98')).toBe(true);
-    expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(capacity).toHaveLength(1);
+    expect(capacity[0]).toHaveAttribute('aria-valuenow', '98');
     expect(screen.getByText('98%')).toBeInTheDocument();
+    expect(screen.queryByText('75%')).not.toBeInTheDocument();
     expect(screen.getByText(/222.6 GB \/ 228.3 GB/)).toBeInTheDocument();
     const drive = screen.getByRole('heading', {name: 'Drive'}).closest('section');
+    expect(within(drive).getByRole('progressbar', {name: 'Capacity usage'}))
+        .toBeInTheDocument();
     expect(within(drive).getByText('Available space')).toBeInTheDocument();
     expect(within(drive).getByText('5.7 GB')).toBeInTheDocument();
     expect(within(drive).queryByText('Free space')).not.toBeInTheDocument();
@@ -480,6 +483,31 @@ test('presents native metric labels, units and capacity instead of raw keys', as
     expect(within(backend).getByText('Leader partitions')).toBeInTheDocument();
     expect(within(backend).queryByText('Total capacity')).not.toBeInTheDocument();
     expect(within(backend).queryByText('Available capacity')).not.toBeInTheDocument();
+    expect(within(backend).queryByRole('progressbar')).not.toBeInTheDocument();
+});
+
+test('still shows capacity when only the backend group reports the volume', async () => {
+    getNode.mockResolvedValue({
+        ...response,
+        node: {
+            ...response.node,
+            metrics: {
+                system: {},
+                backend: {capacity_bytes: 4096, available_bytes: 1024, partitions: 12},
+            },
+            metric_statuses: {
+                system: {availability: 'AVAILABLE', observed_at: 1000},
+                backend: {availability: 'AVAILABLE', observed_at: 1000},
+            },
+        },
+    });
+
+    renderDetail();
+    await screen.findByRole('heading', {name: 'Store A'});
+
+    const capacity = screen.getAllByRole('progressbar', {name: 'Capacity usage'});
+    expect(capacity).toHaveLength(1);
+    expect(capacity[0]).toHaveAttribute('aria-valuenow', '75');
 });
 
 test('uses concise Chinese names for Raft and Store storage metrics', async () => {
