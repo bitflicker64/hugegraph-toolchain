@@ -370,7 +370,7 @@ test('closes and refreshes after apply failure to reveal any partial Schema', as
     await waitFor(() => expect(api.manage.getGraphView).toHaveBeenCalledTimes(2));
 });
 
-test('does not treat a graph with property keys as an empty Schema', async () => {
+test('keeps the Schema guide for a graph that only has property keys', async () => {
     let resolveProperties;
     api.manage.getMetaPropertyList.mockReturnValue(new Promise(resolve => {
         resolveProperties = resolve;
@@ -386,9 +386,15 @@ test('does not treat a graph with property keys as an empty Schema', async () =>
 
     expect(screen.getByRole('button', {name: 'schema.property.create'}))
         .toBeInTheDocument();
-    expect(screen.queryByRole('button', {
+    expect(screen.getByRole('button', {name: 'schema.vertex.create'}))
+        .toBeInTheDocument();
+    expect(screen.getByRole('button', {
         name: 'schema.image_view.create_from_template',
+    })).toBeInTheDocument();
+    expect(screen.queryByRole('button', {
+        name: 'schema.image_view.start_with_property',
     })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('graph-view')).not.toBeInTheDocument();
 });
 
 test('ignores a completed template apply after the graph context changes', async () => {

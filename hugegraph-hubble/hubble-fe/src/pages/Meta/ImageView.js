@@ -377,9 +377,11 @@ const ImageView = () => {
         setTemplateApplying(false);
     }, [graphspace, graph]);
 
+    // The guide stays until the graph has a vertex type: property keys alone
+    // leave nothing to draw on the canvas.
     const schemaIsEmpty = !loading && !loadError
         && !data.nodes?.length && !data.edges?.length
-        && !vertexList.length && !propertyList.length;
+        && !vertexList.length;
     const smallSchema = Boolean(data.nodes?.length && data.nodes.length < 10);
     const builtinNames = Object.keys(BUILTIN_SCHEMA_TEMPLATES);
     const savedOptions = savedTemplates
@@ -482,12 +484,14 @@ const ImageView = () => {
                             <p className={styles.edgeHint}>
                                 {t('schema.image_view.edge_prerequisite')}
                             </p>
-                            <div className={styles.startGuide}>
-                                <p>{t('schema.image_view.start_description')}</p>
-                                <Button type='link' onClick={createProperty}>
-                                    {t('schema.image_view.start_with_property')}
-                                </Button>
-                            </div>
+                            {propertyList.length === 0 && (
+                                <div className={styles.startGuide}>
+                                    <p>{t('schema.image_view.start_description')}</p>
+                                    <Button type='link' onClick={createProperty}>
+                                        {t('schema.image_view.start_with_property')}
+                                    </Button>
+                                </div>
+                            )}
                         </section>
                     ) : (
                         <section className={styles.empty}>
