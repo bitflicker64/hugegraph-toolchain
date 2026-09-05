@@ -214,6 +214,35 @@ describe('Login request errors', () => {
         expect(api.config.getConfig).toHaveBeenCalledTimes(1);
     });
 
+    it('marks the sign-in button pending so a second click cannot resubmit', async () => {
+        let settleLogin;
+        api.auth.login.mockReturnValue(new Promise(resolve => {
+            settleLogin = resolve;
+        }));
+        api.config.getConfig.mockResolvedValue({status: 200, data: {}});
+
+        render(
+            <MemoryRouter
+                initialEntries={['/login']}
+                future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+            >
+                <Login />
+            </MemoryRouter>
+        );
+        await userEvent.type(screen.getByPlaceholderText('login.username'), 'admin');
+        await userEvent.type(screen.getByPlaceholderText('login.password'), 'password');
+        const submit = screen.getByRole('button', {name: 'login.submit'});
+        await userEvent.click(submit);
+
+        await waitFor(() => expect(submit).toHaveClass('ant-btn-loading'));
+        await userEvent.click(submit);
+
+        expect(api.auth.login).toHaveBeenCalledTimes(1);
+        settleLogin({status: 200, data: {user_name: 'admin'}});
+        await waitFor(() => expect(window.location.replace)
+            .toHaveBeenCalledWith('/navigation'));
+    });
+
     it('uses navigation for a plain login instead of a stale stored redirect', async () => {
         sessionStorage.setItem('redirect', '/operations/overview');
         api.auth.login.mockResolvedValue({

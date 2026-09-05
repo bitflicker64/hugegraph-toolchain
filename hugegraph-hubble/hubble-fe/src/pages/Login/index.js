@@ -25,7 +25,7 @@ import * as api from '../../api';
 import {useLocation} from 'react-router-dom';
 import * as user from '../../utils/user';
 import * as configUtil from '../../utils/config';
-import {useCallback, useEffect} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 
 const LOGIN_PATH = '/login';
@@ -55,6 +55,8 @@ const Login = () => {
     const [form] = Form.useForm();
     const location = useLocation();
     const {t} = useTranslation();
+    const [submitting, setSubmitting] = useState(false);
+    const submitPending = useRef(false);
 
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
@@ -88,14 +90,24 @@ const Login = () => {
     }, [location.search]);
 
     const onFinish = useCallback(async value => {
+        if (submitPending.current) {
+            return;
+        }
+
+        submitPending.current = true;
+        setSubmitting(true);
         let res;
         try {
             res = await api.auth.login(value);
         }
         catch {
+            submitPending.current = false;
+            setSubmitting(false);
             return;
         }
         if (res.status !== 200) {
+            submitPending.current = false;
+            setSubmitting(false);
             return;
         }
 
@@ -165,7 +177,13 @@ const Login = () => {
                     </Form.Item>
 
                     <Form.Item className={style.submitItem}>
-                        <Button type="primary" htmlType="submit" block size='large'>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            block
+                            size='large'
+                            loading={submitting}
+                        >
                             {t('login.submit')}
                         </Button>
                     </Form.Item>
