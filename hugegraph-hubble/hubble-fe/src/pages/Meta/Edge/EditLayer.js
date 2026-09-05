@@ -94,7 +94,7 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
     const removeProperty = useCallback(() => {
         // const tmp = [...selectedPropertyList];
         // tmp.splice(index, 1);
-        const {attr} = form.getFieldValue('properties');
+        const attr = form.getFieldValue('properties');
         const tmp = [];
         for (let item of attr) {
             tmp.push({...item, label: item.name, value: item.name});
