@@ -66,7 +66,9 @@ jest.mock('../auth/AuthContext', () => ({
         refresh: mockRefreshContext,
     }),
 }));
+// Keep initReactI18next real: the route graph initializes i18n on import.
 jest.mock('react-i18next', () => ({
+    ...jest.requireActual('react-i18next'),
     useTranslation: () => ({t: key => key}),
 }));
 
