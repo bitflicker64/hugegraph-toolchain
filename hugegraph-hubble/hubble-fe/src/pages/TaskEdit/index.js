@@ -32,7 +32,7 @@ import BaseForm from './BaseForm/index';
 import FieldForm from './FieldForm/index';
 import MappingForm from './MappingForm/index';
 import ScheduleForm from './ScheduleForm/index';
-import {useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate} from 'react-router-dom';
 import * as api from '../../api';
 import JSONbig from 'json-bigint';
 import DataPreparationNav from '../../components/DataPreparationNav';
@@ -42,9 +42,13 @@ import {
     loadTaskBaseContext,
 } from './taskFlow';
 
+// The four steps share one route, so the step has to live in the history entry.
+// Without it the browser Back button leaves the wizard and throws away every
+// value the user has entered, with no warning.
+const TASK_STEP_STATE = 'task_edit_step';
+
 const TaskEdit = () => {
     const {t} = useTranslation();
-    const [current, setCurrent] = useState(0);
     const [targetField, setTargetField] = useState([]);
     // const [datasource, setDatasource] = useState({});
     // Preserve a null source header; otherwise user-customized headers replace the original header.
@@ -66,10 +70,31 @@ const TaskEdit = () => {
     const submitPending = useRef(false);
     const mounted = useRef(true);
     const navigate = useNavigate();
+    const location = useLocation();
+    const current = location.state?.[TASK_STEP_STATE] ?? 0;
+
+    const goToStep = useCallback(step => {
+        navigate(location.pathname, {
+            state: {...location.state, [TASK_STEP_STATE]: step},
+        });
+    }, [location.pathname, location.state, navigate]);
 
     const cancel = useCallback(() => {
         navigate('/task');
     }, [navigate]);
+
+    // A reload, or a return to the wizard through history, restores the step but
+    // not the values the earlier steps produced. Start over instead of showing an
+    // empty later step.
+    useEffect(() => {
+        if (current > 0) {
+            navigate(location.pathname, {
+                replace: true,
+                state: {...location.state, [TASK_STEP_STATE]: 0},
+            });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -78,7 +103,7 @@ const TaskEdit = () => {
         };
     }, []);
 
-    const prev = useCallback(() => setCurrent(value => value - 1), []);
+    const prev = useCallback(() => navigate(-1), [navigate]);
 
     // const addEdge = item => {
     //     edgeList.push(item);
@@ -122,7 +147,7 @@ const TaskEdit = () => {
             setGraph(ingestion_option.graph);
             setDatasourceID(datasource_id.toString());
             setDatasource(context.datasource);
-            setCurrent(1);
+            goToStep(1);
         }
         catch (error) {
             if (baseRequest.current === token) {
@@ -135,7 +160,7 @@ const TaskEdit = () => {
             }
             basePending.current = false;
         }
-    }, [t]);
+    }, [goToStep, t]);
 
     const retryBase = useCallback(() => {
         if (pendingBase) {
@@ -148,12 +173,12 @@ const TaskEdit = () => {
         setTargetField(target_keys);
         setHeader(source_keys.map(item => item.key));
 
-        setCurrent(2);
-    }, []);
+        goToStep(2);
+    }, [goToStep]);
 
     const submitMapping = useCallback(() => {
-        setCurrent(3);
-    }, []);
+        goToStep(3);
+    }, [goToStep]);
 
     const submitVertex = useCallback(values => {
         const {index} = values;
