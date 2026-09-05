@@ -16,13 +16,14 @@
  * under the License.
  */
 
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import {MemoryRouter, Outlet, useLocation} from 'react-router-dom';
 import RouteList from './index';
 import {isAuthEnabled, isPdEnabled} from '../utils/config';
 
 let mockCapabilities = new Set();
 let mockAuthState = {loading: false, error: null};
+const mockRefreshContext = jest.fn();
 
 jest.mock('../pages/Datasource', () => () => <div>datasource page</div>);
 jest.mock('../pages/Task', () => () => <div>task page</div>);
@@ -62,7 +63,11 @@ jest.mock('../auth/AuthContext', () => ({
     useAuthContext: () => ({
         ...mockAuthState,
         hasCapability: capability => mockCapabilities.has(capability),
+        refresh: mockRefreshContext,
     }),
+}));
+jest.mock('react-i18next', () => ({
+    useTranslation: () => ({t: key => key}),
 }));
 
 const renderRoutes = initialEntry => {
@@ -98,6 +103,7 @@ describe('route guard', () => {
         localStorage.clear();
         sessionStorage.clear();
         mockAccountRender.mockClear();
+        mockRefreshContext.mockClear();
         mockCapabilities = new Set();
         mockAuthState = {loading: false, error: null};
         isAuthEnabled.mockReturnValue(true);
@@ -310,6 +316,22 @@ describe('route guard', () => {
         expect(screen.queryByText('account page')).toBeNull();
         expect(screen.queryByText('navigation page')).toBeNull();
         expect(mockAccountRender).not.toHaveBeenCalled();
+    });
+
+    it('offers a retry instead of bouncing the admin when the context fails to load', () => {
+        mockAuthState = {loading: false, error: new Error('auth_context_500')};
+        sessionStorage.setItem('user_', JSON.stringify({id: 'admin'}));
+
+        renderRoutes('/account');
+
+        expect(screen.getByText('common.msg.load_failed')).toBeTruthy();
+        expect(screen.queryByText('navigation page')).toBeNull();
+        expect(screen.queryByText('account page')).toBeNull();
+        expect(mockAccountRender).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole('button', {name: 'common.action.retry'}));
+
+        expect(mockRefreshContext).toHaveBeenCalledTimes(1);
     });
 
     it('allows non-PD account access only with the server capability', () => {

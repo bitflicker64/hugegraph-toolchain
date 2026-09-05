@@ -16,7 +16,9 @@
  * under the License.
  */
 
-import {Skeleton} from 'antd';
+import {Alert, Button, Skeleton} from 'antd';
+import {useCallback} from 'react';
+import {useTranslation} from 'react-i18next';
 import {Navigate, Routes, Route, useParams, useLocation} from 'react-router-dom';
 import Datasource from '../pages/Datasource';
 import Task from '../pages/Task';
@@ -81,10 +83,31 @@ const ProtectedRoute = ({children}) => {
 };
 
 const AccountRoute = () => {
-    const {loading, hasCapability} = useAuthContext();
+    const {t} = useTranslation();
+    const {loading, error, hasCapability, refresh} = useAuthContext();
+    const retry = useCallback(
+        () => Promise.resolve(refresh?.()).catch(() => undefined),
+        [refresh]
+    );
 
     if (loading) {
         return <Skeleton active />;
+    }
+
+    // A context that failed to load is not the same as a denied capability.
+    if (error) {
+        return (
+            <Alert
+                type='error'
+                showIcon
+                message={t('common.msg.load_failed')}
+                action={(
+                    <Button size='small' onClick={retry}>
+                        {t('common.action.retry')}
+                    </Button>
+                )}
+            />
+        );
     }
 
     return hasCapability('accounts_manage')
