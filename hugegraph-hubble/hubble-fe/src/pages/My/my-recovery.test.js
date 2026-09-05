@@ -18,6 +18,7 @@
 
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {message} from 'antd';
 import My from './index';
 import * as api from '../../api';
 import * as user from '../../utils/user';
@@ -270,6 +271,7 @@ test('stops password submit loading when the request rejects', async () => {
 });
 
 test('stops password submit loading and preserves the form on a non-200 response', async () => {
+    const messageError = jest.spyOn(message, 'error').mockImplementation(() => undefined);
     api.auth.updatePwd.mockResolvedValue({status: 400, message: 'invalid old password'});
     const confirm = await openPasswordForm();
     await fillValidPasswords();
@@ -283,6 +285,9 @@ test('stops password submit loading and preserves the form on a non-200 response
     expect(screen.getByPlaceholderText('my.edit.old_password_placeholder')).toHaveValue('old-pass');
     expect(user.clearLogin).not.toHaveBeenCalled();
     expect(window.location.replace).not.toHaveBeenCalled();
+    // The request layer already toasted this failure; the page must not stack a second one.
+    expect(messageError).not.toHaveBeenCalled();
+    messageError.mockRestore();
 });
 
 test('clears local auth and redirects only after the password update succeeds', async () => {

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {Alert, Avatar, PageHeader, Button, Form, Input, Space, Tag, message, Spin} from 'antd';
+import {Alert, Avatar, PageHeader, Button, Form, Input, Space, Tag, Spin} from 'antd';
 import {EditOutlined, LockOutlined, UserOutlined} from '@ant-design/icons';
 import {useEffect, useRef, useState, useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -81,16 +81,16 @@ const My = () => {
             const {old_password, user_password} = values;
             setLoading(true);
             const res = await api.auth.updatePwd(data.user_name, old_password, user_password);
-            if (res.status === 200) {
-                user.beginLogoutTransition();
-                sessionStorage.removeItem('redirect');
-                clearPersistedAlgorithmFormsForUser();
-                user.clearLogin();
-                window.location.replace(PASSWORD_CHANGED_LOGIN_PATH);
+            if (res.status !== 200) {
+                // The API layer already reported this failure; a second toast would stack on it.
                 return;
             }
 
-            message.error(res.message);
+            user.beginLogoutTransition();
+            sessionStorage.removeItem('redirect');
+            clearPersistedAlgorithmFormsForUser();
+            user.clearLogin();
+            window.location.replace(PASSWORD_CHANGED_LOGIN_PATH);
         }
         catch (error) {
             // Validation errors render inline; request errors are owned by the API layer.
