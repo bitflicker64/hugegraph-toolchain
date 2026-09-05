@@ -122,7 +122,11 @@
 }
 
 .operations-health-reason {
+    // The badge is nowrap so the status word never breaks, but the reason is a
+    // full sentence: keep it wrappable or it fixes a minimum width on the page
+    // header and pushes the header actions outside the viewport.
     color: var(--workbench-color-text-secondary);
+    white-space: normal;
     font-weight: 400;
 }
 
