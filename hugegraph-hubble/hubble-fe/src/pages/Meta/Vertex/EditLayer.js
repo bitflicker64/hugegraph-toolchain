@@ -31,6 +31,8 @@ import {InputColorSelect} from '../../../components/ColorSelect';
 import RelateProperty from '../common/RelateProperty';
 import RelatePropertyIndex from '../common/RelatePropertyIndex';
 
+const DEFAULT_VERTEX_ICON = 'UserOutlined';
+
 const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, propertyList}) => {
     const {t} = useTranslation();
     const defaultDisplayFields = {label: t('schema.vertex.id'), value: '~id'};
@@ -212,6 +214,7 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
                         style: {
                             color: '#5c73e6',
                             size: 'NORMAL',
+                            icon: DEFAULT_VERTEX_ICON,
                             display_fields: ['~id'],
                         },
                         id_strategy: 'PRIMARY_KEY',
