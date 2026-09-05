@@ -372,6 +372,40 @@ public class GraphsServiceDefaultTest {
     }
 
     @Test
+    public void testGetReturnsTheStoredNicknameRatherThanTheGraphName() {
+        Mockito.when(this.graphs.getGraph("demo"))
+               .thenReturn(Collections.singletonMap("backend", "hstore"));
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("name", "demo");
+        profile.put("nickname", "keepme_alias");
+        Mockito.when(this.graphs.listProfile("demo"))
+               .thenReturn(Collections.singletonList(profile));
+
+        Map<String, Object> info = this.service.get(this.client, "DEFAULT",
+                                                    "demo",
+                                                    Collections.emptyMap());
+
+        Assert.assertEquals("keepme_alias", info.get("nickname"));
+        Assert.assertEquals("DEFAULT", info.get("graphspace"));
+    }
+
+    @Test
+    public void testGetLeavesNicknameEmptyWhenNoAliasIsStored() {
+        Mockito.when(this.graphs.getGraph("demo"))
+               .thenReturn(Collections.singletonMap("backend", "hstore"));
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("name", "demo");
+        Mockito.when(this.graphs.listProfile("demo"))
+               .thenReturn(Collections.singletonList(profile));
+
+        Map<String, Object> info = this.service.get(this.client, "DEFAULT",
+                                                    "demo",
+                                                    Collections.emptyMap());
+
+        Assert.assertEquals("", info.get("nickname"));
+    }
+
+    @Test
     public void testGraphProfilesFallBackForStandaloneServer() {
         Mockito.when(this.graphs.listProfile("huge"))
                .thenThrow(new ServerException("profile unsupported"));

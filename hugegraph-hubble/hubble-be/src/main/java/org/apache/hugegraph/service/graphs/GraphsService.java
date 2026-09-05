@@ -124,7 +124,16 @@ public class GraphsService {
         info.putAll(client.graphs().getGraph(graph));
         // info.put("storage", storage);
         // Ensure nickname/graphspace fields exist for frontend display
-        info.putIfAbsent("nickname", graph);
+        if (StringUtils.isBlank(asString(info.get("nickname")))) {
+            /*
+             * getGraph() carries no nickname, so read the stored alias from
+             * the graph profile, the same source the graph list reads. Never
+             * substitute the graph name here: the edit dialog pre-fills its
+             * alias field from this value and would silently overwrite the
+             * stored alias with the graph name.
+             */
+            info.put("nickname", nickname(client, graph));
+        }
         info.putIfAbsent("graphspace", graphSpace);
         if (vermeerInfo.size() != 0) {
             info.put("status", vermeerInfo.get("status"));
@@ -133,6 +142,28 @@ public class GraphsService {
             info.put("last_load_time", lastLoadTime);
         }
         return info;
+    }
+
+    private static String asString(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    /**
+     * The stored alias of a graph, or an empty string when none is set.
+     */
+    private String nickname(HugeClient client, String graph) {
+        try {
+            for (Map<String, Object> profile :
+                 client.graphs().listProfile(graph)) {
+                if (graph.equals(asString(profile.get("name")))) {
+                    String nickname = asString(profile.get("nickname"));
+                    return nickname == null ? "" : nickname;
+                }
+            }
+        } catch (RuntimeException e) {
+            log.warn("Failed to read the nickname of graph '{}'", graph, e);
+        }
+        return "";
     }
 
     public IPage<Map<String, Object>> queryPage(HugeClient client,
