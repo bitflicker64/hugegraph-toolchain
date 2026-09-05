@@ -63,7 +63,7 @@ test('vertex detail failure ends loading, disables submit and retries', async ()
             status: 200,
             data: {
                 name: 'person', properties: [], property_indexes: [],
-                id_strategy: 'AUTOMATIC', primaryKeys: [],
+                id_strategy: 'AUTOMATIC', primary_keys: [],
             },
         });
 

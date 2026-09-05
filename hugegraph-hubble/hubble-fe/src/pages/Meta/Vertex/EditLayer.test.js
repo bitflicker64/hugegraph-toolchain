@@ -42,8 +42,12 @@ jest.mock('../../../components/ColorSelect', () => ({
 jest.mock('../../../components/IconSelect', () => ({value}) => (
     <input aria-label='icon' value={value ?? ''} readOnly />
 ));
-jest.mock('../common/RelateProperty', () => () => <div>properties</div>);
-jest.mock('../common/RelatePropertyIndex', () => () => <div>indexes</div>);
+
+const mockIndexProps = {current: null};
+jest.mock('../common/RelatePropertyIndex', () => props => {
+    mockIndexProps.current = props;
+    return <div>indexes</div>;
+});
 
 const AUTOMATIC = idOptions.find(item => item.value === 'AUTOMATIC');
 
@@ -110,4 +114,49 @@ test('rejects an invalid vertex label name before sending it', async () => {
     await waitFor(() => expect(input.closest('.ant-form-item'))
         .toHaveTextContent('common.validation.property_name_rule'));
     expect(api.manage.addMetaVertex).not.toHaveBeenCalled();
+});
+
+test('edits a label with its own primary keys and the property appended in the same form', async () => {
+    api.manage.getMetaVertex.mockResolvedValue({
+        status: 200,
+        data: {
+            name: 'person',
+            properties: [{name: 'city', nullable: false}],
+            property_indexes: [],
+            id_strategy: 'PRIMARY_KEY',
+            primary_keys: ['city'],
+            open_label_index: false,
+            style: {
+                color: '#5c73e6', size: 'NORMAL', icon: 'UserOutlined', display_fields: ['~id'],
+            },
+        },
+    });
+
+    render(
+        <EditVertexLayer
+            visible
+            onCancle={jest.fn()}
+            graphspace='DEFAULT'
+            graph='hugegraph'
+            refresh={jest.fn()}
+            name='person'
+            propertyList={[
+                {label: 'city', value: 'city', data_type: 'TEXT'},
+                {label: 'age', value: 'age', data_type: 'INT'},
+            ]}
+        />
+    );
+
+    await screen.findByDisplayValue('person');
+    await waitFor(() => expect(mockIndexProps.current.primaryKeys).toEqual(['city']));
+
+    fireEvent.click(screen.getByRole('button', {name: '+common.action.add'}));
+    fireEvent.mouseDown(document.getElementById('append_properties_0_name'));
+    fireEvent.click(await screen.findByText('age', {
+        selector: '.ant-select-item-option-content',
+    }));
+
+    await waitFor(() => expect(
+        mockIndexProps.current.selectedPropertyList.map(item => item.value)
+    ).toEqual(['city', 'age']));
 });

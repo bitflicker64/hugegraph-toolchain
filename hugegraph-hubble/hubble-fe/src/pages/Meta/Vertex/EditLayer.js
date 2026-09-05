@@ -60,7 +60,7 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
                 setDetailError(true);
                 return;
             }
-            const {properties, property_indexes, id_strategy, primaryKeys} = res.data;
+            const {properties, property_indexes, id_strategy, primary_keys} = res.data;
             form.setFieldsValue(res.data);
             setSelectedPropertyList(properties.map(item => ({
                 ...item, label: item.name, value: item.name,
@@ -68,7 +68,7 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
             setExistProperties(properties);
             setExistPropertyIndex(property_indexes);
             setIdStrategy(id_strategy);
-            setPrimaryKeys(primaryKeys);
+            setPrimaryKeys(primary_keys);
         }).catch(() => {
             if (detailRequest.current === token) {
                 setDetailError(true);
@@ -88,13 +88,18 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
         setPrimaryKeys(values);
     }, []);
 
+    // Edit mode collects the new rows under `append_properties`, and the label
+    // keeps the properties it already has.
+    const propertyFieldName = name ? 'append_properties' : 'properties';
+    const existingPropertyOptions = useCallback(() => existProperties.map(item => ({
+        ...item, label: item.name, value: item.name,
+    })), [existProperties]);
+
     const selectProperty = useCallback(() => {
-        // const tmp = [...selectedPropertyList];
-        // tmp.push({label: val, value: val});
-        const attr = form.getFieldValue('properties');
-        const tmp = [];
-        const exist = [];
-        form.validateFields(['properties']);
+        const attr = form.getFieldValue(propertyFieldName) ?? [];
+        const tmp = existingPropertyOptions();
+        const exist = tmp.map(item => item.value);
+        form.validateFields([propertyFieldName]);
         for (let item of attr) {
             if (item !== undefined && item.name && !exist.includes(item.name)) {
                 tmp.push({...item, label: item.name, value: item.name});
@@ -102,18 +107,18 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
             exist.push(item.name);
         }
         setSelectedPropertyList(tmp);
-    }, [form]);
+    }, [existingPropertyOptions, form, propertyFieldName]);
 
     const removeProperty = useCallback(() => {
-        // const tmp = [...selectedPropertyList];
-        // tmp.splice(index, 1);
-        const attr = form.getFieldValue('properties');
-        const tmp = [];
+        const attr = form.getFieldValue(propertyFieldName) ?? [];
+        const tmp = existingPropertyOptions();
         for (let item of attr) {
-            tmp.push({...item, label: item.name, value: item.name});
+            if (item !== undefined && item.name) {
+                tmp.push({...item, label: item.name, value: item.name});
+            }
         }
         setSelectedPropertyList(tmp);
-    }, [form]);
+    }, [existingPropertyOptions, form, propertyFieldName]);
 
     const addVertex = useCallback(data => {
         setLoading(true);
