@@ -154,8 +154,25 @@ public class LoginController extends BaseController {
             } else {
                 this.loginAttemptGuard.release(login.name(), address);
             }
+            if (isRejectedCredential(e)) {
+                /*
+                 * The server reports rejected credentials in English only.
+                 * Hubble has a translated message for exactly this failure
+                 * and loginStandalone() already throws it, so answer the same
+                 * way whichever login path ran.
+                 */
+                throw new ExternalException(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        "graph-connection.username-or-password.incorrect");
+            }
             throw e;
         }
+    }
+
+    private static boolean isRejectedCredential(Throwable error) {
+        return error instanceof ServerException &&
+               ((ServerException) error).status() ==
+               HttpStatus.UNAUTHORIZED.value();
     }
 
     private static boolean isAuthenticationFailure(Throwable error) {

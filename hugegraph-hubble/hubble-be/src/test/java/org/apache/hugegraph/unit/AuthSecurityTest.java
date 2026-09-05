@@ -72,6 +72,7 @@ import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.exception.LoginThrottledException;
 import org.apache.hugegraph.exception.ParameterizedException;
 import org.apache.hugegraph.exception.ServerCapabilityUnavailableException;
+import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.exception.UnauthorizedException;
 import org.apache.hugegraph.handler.CustomInterceptor;
 import org.apache.hugegraph.handler.ExceptionAdvisor;
@@ -939,6 +940,43 @@ public class AuthSecurityTest {
                           Constant.PASSWORD_KEY));
         Assert.assertNull(request.getSession().getAttribute(
                           Constant.PASSWORD_EXPIRE_AT_KEY));
+    }
+
+    @Test
+    public void testPdLoginRejectionUsesTheTranslatableHubbleMessage()
+           throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(request));
+        TestLoginController controller = new TestLoginController();
+        HugeConfig config = Mockito.mock(HugeConfig.class);
+        Mockito.when(config.get(HubbleOptions.PD_ENABLED)).thenReturn(true);
+        setField(controller, "config", config);
+
+        ServerException rejected = new ServerException("Authentication failed");
+        rejected.status(HttpStatus.UNAUTHORIZED.value());
+        AuthManager auth = Mockito.mock(AuthManager.class);
+        Mockito.when(auth.login(Mockito.any())).thenThrow(rejected);
+        HugeClient loginClient = Mockito.mock(HugeClient.class);
+        Mockito.when(loginClient.auth()).thenReturn(auth);
+        controller.loginClient = loginClient;
+        Login login = new Login();
+        login.name("admin");
+        login.password("wrong");
+
+        try {
+            controller.login(login);
+            Assert.fail("Expected the rejected credential to be reported");
+        } catch (ExternalException error) {
+            Assert.assertEquals(HttpStatus.UNAUTHORIZED.value(),
+                                error.status());
+            Assert.assertEquals(
+                    "graph-connection.username-or-password.incorrect",
+                    error.getMessage());
+        }
+
+        Mockito.verify(controller.attemptGuard)
+               .recordFailure("admin", "127.0.0.1");
     }
 
     @Test
