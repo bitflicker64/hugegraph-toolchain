@@ -512,6 +512,36 @@ test('keeps a specific account creation error visible in the form', async () => 
     expect(props.onCancel).not.toHaveBeenCalled();
 });
 
+test('names the visible labels in account field validation messages', async () => {
+    render(<EditLayer {...props} data={{}} op='create' />);
+    await act(async () => undefined);
+
+    fireEvent.change(screen.getByPlaceholderText(
+        'account.form.id_placeholder'
+    ), {target: {value: 'abc'}});
+    fireEvent.change(screen.getByPlaceholderText(
+        'account.form.default_password_placeholder'
+    ), {target: {value: 'abc'}});
+    await act(async () => {
+        fireEvent.click(document.querySelector(
+            '.ant-modal-footer .ant-btn-primary'
+        ));
+    });
+
+    await waitFor(() => expect(
+        document.querySelectorAll('.ant-form-item-explain-error').length
+    ).toBe(2));
+    const messages = Array.from(
+        document.querySelectorAll('.ant-form-item-explain-error')
+    ).map(node => node.textContent);
+    expect(messages.some(text => text.includes('account.form.id'))).toBe(true);
+    expect(messages.some(text => text.includes('account.form.default_password')))
+        .toBe(true);
+    expect(messages.some(text => text.includes('user_name'))).toBe(false);
+    expect(messages.some(text => text.includes('user_password'))).toBe(false);
+    expect(api.auth.addUser).not.toHaveBeenCalled();
+});
+
 test('shows the derived space administrator level in account details', async () => {
     api.auth.getUserInfo.mockResolvedValue({
         status: 200,

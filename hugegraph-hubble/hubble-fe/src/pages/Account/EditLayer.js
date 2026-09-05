@@ -312,6 +312,7 @@ const EditLayer = ({
                                     <Form.Item
                                         label={<HelpLabel t={t} labelKey='account.form.id' />}
                                         name="user_name"
+                                        messageVariables={{label: t('account.form.id')}}
                                         validateFirst
                                         rules={[{type: 'string', min: 5, max: 16}, rules.isName, rules.required()]}
                                     >
@@ -331,6 +332,9 @@ const EditLayer = ({
                                     <Form.Item
                                         label={<HelpLabel t={t} labelKey='account.form.default_password' />}
                                         name="user_password"
+                                        messageVariables={{
+                                            label: t('account.form.default_password'),
+                                        }}
                                         rules={op === 'create'
                                             ? [rules.required(), {type: 'string', min: 5, max: 16}]
                                             : [{type: 'string', min: 5, max: 16}]}
