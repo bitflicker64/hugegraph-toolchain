@@ -173,7 +173,7 @@ const PropertyTable = ({noHeader, forceRefresh, canWrite = true}) => {
                     </Col>
                 </Row>
             )}
-            <br />{noHeader}
+            <br />
 
             <MetaTableStatus error={error} onRetry={retry} />
 
