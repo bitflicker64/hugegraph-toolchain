@@ -123,12 +123,12 @@ const Nodes = () => {
     }), [pdMode, searchParams]);
     const [searchValue, setSearchValue] = useState(params.query ?? '');
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (refresh = false) => {
         const request = ++requestSequence.current;
         setLoading(true);
         setError(null);
         try {
-            const response = await getNodes(params);
+            const response = await getNodes(params, refresh);
             if (request === requestSequence.current) {
                 if (pdMode) {
                     setData(response);
@@ -163,6 +163,9 @@ const Nodes = () => {
     useEffect(() => {
         load();
     }, [load]);
+
+    // Forces a fresh collection, like the Overview and node-detail Refresh do.
+    const refresh = useCallback(() => load(true), [load]);
 
     useEffect(() => {
         setSearchValue(params.query ?? '');
@@ -279,7 +282,7 @@ const Nodes = () => {
                         {data.stale && <strong>{t('operations.stale')}</strong>}
                     </div>
                 </div>
-                <RefreshButton loading={loading} onClick={load} />
+                <RefreshButton loading={loading} onClick={refresh} />
             </header>
             {error && (
                 <Alert type='warning' showIcon message={t('operations.load_failed')} />

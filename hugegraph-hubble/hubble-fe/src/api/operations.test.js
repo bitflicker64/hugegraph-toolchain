@@ -57,6 +57,18 @@ test('preserves an HTTP authorization status for stale-data cleanup', async () =
     await expect(getNodes({page: 1})).rejects.toMatchObject({status: 403});
 });
 
+test('lets the node list ask for a fresh collection', async () => {
+    request.get.mockResolvedValue({status: 200, data: {items: [], total: 0}});
+
+    await getNodes({page: 1, page_size: 20});
+    expect(request.get).toHaveBeenLastCalledWith('/operations/nodes',
+        expect.objectContaining({params: {page: 1, page_size: 20, refresh: false}}));
+
+    await getNodes({page: 1, page_size: 20}, true);
+    expect(request.get).toHaveBeenLastCalledWith('/operations/nodes',
+        expect.objectContaining({params: {page: 1, page_size: 20, refresh: true}}));
+});
+
 test('preserves a business authorization status from an HTTP 200 envelope', async () => {
     const error = new Error('Unauthorized');
     error.status = 200;

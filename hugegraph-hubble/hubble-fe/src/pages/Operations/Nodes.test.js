@@ -63,7 +63,7 @@ test('limits standalone node details to Server nodes and filters', async () => {
 
     expect(await screen.findByRole('heading', {name: 'Node details'})).toBeInTheDocument();
     await waitFor(() => expect(getNodes).toHaveBeenCalledWith(
-        expect.objectContaining({type: 'SERVER'})
+        expect.objectContaining({type: 'SERVER'}), false
     ));
     fireEvent.mouseDown(screen.getByRole('combobox', {name: /node type/i}));
     expect(screen.getByRole('option', {name: 'Server'})).toBeInTheDocument();
@@ -141,7 +141,7 @@ test('clears all user filters while preserving paging size and sort preferences'
         page_size: 50,
         sort: 'status',
         order: 'desc',
-    }));
+    }, false));
     await waitFor(() => expect(screen.getByRole('button', {name: /Refresh/}))
         .not.toHaveClass('ant-btn-loading'));
     expect(screen.queryByRole('button', {name: 'Clear filters'}))
@@ -187,7 +187,9 @@ test('does not treat the standalone fixed SERVER type as a clearable filter', as
         .not.toHaveClass('ant-btn-loading'));
     expect(screen.queryByRole('button', {name: 'Clear filters'}))
         .not.toBeInTheDocument();
-    expect(getNodes).toHaveBeenCalledWith(expect.objectContaining({type: 'SERVER'}));
+    expect(getNodes).toHaveBeenCalledWith(
+        expect.objectContaining({type: 'SERVER'}), false
+    );
 });
 
 test('ships the clear-filters action in Chinese and English', () => {
@@ -234,7 +236,7 @@ test('shows stale observation metadata and exposes real detail links', async () 
 
     fireEvent.click(screen.getByRole('columnheader', {name: 'Type'}));
     await waitFor(() => expect(getNodes).toHaveBeenLastCalledWith(
-        expect.objectContaining({sort: 'type', order: 'asc'})
+        expect.objectContaining({sort: 'type', order: 'asc'}), false
     ));
     await waitFor(() => expect(screen.getByRole('button', {name: /Refresh/}))
         .not.toHaveClass('ant-btn-loading'));
@@ -298,7 +300,7 @@ test('keeps the search input synchronized with URL history and clear actions', a
     await waitFor(() => expect(screen.getByLabelText('current query'))
         .not.toHaveTextContent('query='));
     await waitFor(() => expect(getNodes).toHaveBeenLastCalledWith(
-        expect.objectContaining({query: undefined})
+        expect.objectContaining({query: undefined}), false
     ));
     await waitFor(() => expect(screen.getByRole('button', {name: /Refresh/}))
         .not.toHaveClass('ant-btn-loading'));
@@ -413,6 +415,27 @@ test('merges role into node identity and keeps the full ID explainable and copya
 
     fireEvent.click(within(identity).getByRole('button', {name: 'Copy full node ID'}));
     expect(writeText).toHaveBeenCalledWith('store-c410c1adb107-full-id');
+});
+
+test('asks for a fresh collection when the node list is refreshed', async () => {
+    getNodes.mockResolvedValue({items: [], total: 0, observed_at: 1000, stale: false});
+
+    render(
+        <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+            <Nodes />
+        </MemoryRouter>
+    );
+
+    expect(await screen.findByText('0 nodes')).toBeInTheDocument();
+    expect(getNodes).toHaveBeenLastCalledWith(expect.any(Object), false);
+    await waitFor(() => expect(screen.getByRole('button', {name: /Refresh/}))
+        .not.toHaveClass('ant-btn-loading'));
+
+    fireEvent.click(screen.getByRole('button', {name: /Refresh/}));
+
+    await waitFor(() => expect(getNodes).toHaveBeenLastCalledWith(
+        expect.any(Object), true
+    ));
 });
 
 test('applies the declared column widths to the real table element', async () => {

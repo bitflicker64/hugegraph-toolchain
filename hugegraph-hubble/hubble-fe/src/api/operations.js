@@ -59,10 +59,10 @@ const getOverview = async (refresh = false) => requestOperation(
     })
 );
 
-const getNodes = async params => requestOperation(
+const getNodes = async (params, refresh = false) => requestOperation(
     request.get('/operations/nodes', {
         ...QUIET,
-        params,
+        params: {...params, refresh},
     })
 );
 
