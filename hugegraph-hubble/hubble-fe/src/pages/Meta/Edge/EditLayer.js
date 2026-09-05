@@ -77,11 +77,18 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
         });
     }, [form, graph, graphspace, name]);
 
+    // Edit mode collects the new rows under `append_properties`, and the label
+    // keeps the properties it already has.
+    const propertyFieldName = name ? 'append_properties' : 'properties';
+    const existingPropertyOptions = useCallback(() => existProperties.map(item => ({
+        ...item, label: item.name, value: item.name,
+    })), [existProperties]);
+
     const selectProperty = useCallback(() => {
-        const attr = form.getFieldValue('properties');
-        const tmp = [];
-        const exist = [];
-        form.validateFields(['properties']);
+        const attr = form.getFieldValue(propertyFieldName) ?? [];
+        const tmp = existingPropertyOptions();
+        const exist = tmp.map(item => item.value);
+        form.validateFields([propertyFieldName]);
         for (let item of attr) {
             if (item !== undefined && item.name && !exist.includes(item.name)) {
                 tmp.push({...item, label: item.name, value: item.name});
@@ -89,18 +96,18 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
             exist.push(item.name);
         }
         setSelectedPropertyList(tmp);
-    }, [form]);
+    }, [existingPropertyOptions, form, propertyFieldName]);
 
     const removeProperty = useCallback(() => {
-        // const tmp = [...selectedPropertyList];
-        // tmp.splice(index, 1);
-        const attr = form.getFieldValue('properties');
-        const tmp = [];
+        const attr = form.getFieldValue(propertyFieldName) ?? [];
+        const tmp = existingPropertyOptions();
         for (let item of attr) {
-            tmp.push({...item, label: item.name, value: item.name});
+            if (item !== undefined && item.name) {
+                tmp.push({...item, label: item.name, value: item.name});
+            }
         }
         setSelectedPropertyList(tmp);
-    }, [form]);
+    }, [existingPropertyOptions, form, propertyFieldName]);
 
     const addEdge = useCallback(data => {
 

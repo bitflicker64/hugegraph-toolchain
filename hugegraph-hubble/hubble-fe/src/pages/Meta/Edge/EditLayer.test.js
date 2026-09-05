@@ -39,8 +39,12 @@ jest.mock('../../../api', () => ({
 jest.mock('../../../components/ColorSelect', () => ({
     InputColorSelect: () => <input aria-label='color' />,
 }));
-jest.mock('../common/RelateProperty', () => () => <div>properties</div>);
-jest.mock('../common/RelatePropertyIndex', () => () => <div>indexes</div>);
+
+const mockIndexProps = {current: null};
+jest.mock('../common/RelatePropertyIndex', () => props => {
+    mockIndexProps.current = props;
+    return <div>indexes</div>;
+});
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -77,4 +81,57 @@ test('rejects an invalid edge label name before sending it', async () => {
     await waitFor(() => expect(input.closest('.ant-form-item'))
         .toHaveTextContent('common.validation.property_name_rule'));
     expect(api.manage.addMetaEdge).not.toHaveBeenCalled();
+});
+
+test('offers the property appended while editing to the index select', async () => {
+    api.manage.getMetaEdge.mockResolvedValue({
+        status: 200,
+        data: {
+            name: 'created',
+            properties: [{name: 'city', nullable: false}],
+            property_indexes: [],
+            link_multi_times: false,
+            edgelabel_type: 'NORMAL',
+            source_label: 'person',
+            target_label: 'software',
+            open_label_index: false,
+            style: {
+                color: '#5c73e6', thickness: 'NORMAL', with_arrow: true, display_fields: ['~id'],
+            },
+        },
+    });
+
+    render(
+        <EditEdgeLayer
+            visible
+            onCancle={jest.fn()}
+            graphspace='DEFAULT'
+            graph='hugegraph'
+            refresh={jest.fn()}
+            name='created'
+            propertyList={[
+                {label: 'city', value: 'city', data_type: 'TEXT'},
+                {label: 'age', value: 'age', data_type: 'INT'},
+            ]}
+            vertexList={[
+                {label: 'person', value: 'person'},
+                {label: 'software', value: 'software'},
+            ]}
+        />
+    );
+
+    await screen.findByDisplayValue('created');
+    await waitFor(() => expect(
+        mockIndexProps.current.selectedPropertyList.map(item => item.value)
+    ).toEqual(['city']));
+
+    fireEvent.click(screen.getByRole('button', {name: '+common.action.add'}));
+    fireEvent.mouseDown(document.getElementById('append_properties_0_name'));
+    fireEvent.click(await screen.findByText('age', {
+        selector: '.ant-select-item-option-content',
+    }));
+
+    await waitFor(() => expect(
+        mockIndexProps.current.selectedPropertyList.map(item => item.value)
+    ).toEqual(['city', 'age']));
 });
