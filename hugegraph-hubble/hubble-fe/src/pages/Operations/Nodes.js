@@ -195,13 +195,17 @@ const Nodes = () => {
     }, [searchParams, setSearchParams]);
 
     // A page index past the end answers 200 with no rows, which would otherwise
-    // read as "N nodes" above an empty table with nothing to explain it.
+    // read as "N nodes" above an empty table with nothing to explain it. Only a
+    // page the server really answered empty counts: a page that still has rows is
+    // one the user can read, and rewriting its URL would drop the place a node
+    // detail has to return to.
     useEffect(() => {
         const lastPage = Math.max(1, Math.ceil(Number(data.total) / params.page_size));
-        if (!loading && !error && Number.isFinite(lastPage) && params.page > lastPage) {
+        if (!loading && !error && !data.items.length
+            && Number.isFinite(lastPage) && params.page > lastPage) {
             update({page: String(lastPage)});
         }
-    }, [data.total, error, loading, params.page, params.page_size, update]);
+    }, [data.items.length, data.total, error, loading, params.page, params.page_size, update]);
 
     const changeType = useCallback(value => update({type: value}), [update]);
     const changeStatus = useCallback(value => update({status: value}), [update]);
@@ -292,6 +296,11 @@ const Nodes = () => {
     // the real <table> is told to use them; below that width the table scrolls
     // inside the card instead of widening the whole page.
     const tableWidth = columns.reduce((total, column) => total + column.width, 0);
+    // rc-table renders the empty placeholder's content only once it has measured a
+    // horizontally scrolling table, so asking for the scroll on a zero-row page
+    // leaves a blank box where "No data" belongs. An empty table has nothing to
+    // scroll sideways anyway, so only ask for it once there are rows.
+    const scroll = data.items.length ? {x: tableWidth} : undefined;
 
     return (
         <main className='operations-page operations-nodes'>
@@ -373,7 +382,7 @@ const Nodes = () => {
                     dataSource={data.items}
                     columns={columns}
                     tableLayout='fixed'
-                    scroll={{x: tableWidth}}
+                    scroll={scroll}
                     onRow={row}
                     onChange={changeTable}
                     pagination={{

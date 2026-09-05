@@ -467,12 +467,16 @@ test('offers a retry when the node list cannot be loaded', async () => {
 });
 
 test('returns to the last populated page when the URL points past the end', async () => {
-    getNodes.mockResolvedValue({
-        items: [{id: 'server-1', name: 'Server A', type: 'SERVER', status: 'UP'}],
-        total: 1,
-        observed_at: 1000,
-        stale: false,
-    });
+    // A page index past the end answers 200 with no rows, but still reports the
+    // real total, which is what tells the list where the last populated page is.
+    getNodes
+        .mockResolvedValueOnce({items: [], total: 1, observed_at: 1000, stale: false})
+        .mockResolvedValue({
+            items: [{id: 'server-1', name: 'Server A', type: 'SERVER', status: 'UP'}],
+            total: 1,
+            observed_at: 1000,
+            stale: false,
+        });
 
     render(
         <MemoryRouter
@@ -492,6 +496,31 @@ test('returns to the last populated page when the URL points past the end', asyn
         expect.objectContaining({page: 1}), false
     ));
     expect(await screen.findByRole('link', {name: /Server A/})).toBeInTheDocument();
+});
+
+test('keeps a page that still has rows even when the total disagrees', async () => {
+    getNodes.mockResolvedValue({
+        items: [{id: 'server-1', name: 'Server A', type: 'SERVER', status: 'UP'}],
+        total: 1,
+        observed_at: 1000,
+        stale: false,
+    });
+
+    render(
+        <MemoryRouter
+            initialEntries={['/operations/nodes?query=Server&page=2']}
+            future={{v7_startTransition: true, v7_relativeSplatPath: true}}
+        >
+            <FilterLocationProbe />
+            <Nodes />
+        </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('link', {name: /Server A/})).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', {name: /Refresh/}))
+        .not.toHaveClass('ant-btn-loading'));
+    expect(screen.getByLabelText('filter location'))
+        .toHaveTextContent('query=Server&page=2');
 });
 
 test('reports the observation time of each node, not the snapshot time', async () => {
