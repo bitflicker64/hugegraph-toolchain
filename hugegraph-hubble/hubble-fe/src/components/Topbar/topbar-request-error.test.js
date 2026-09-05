@@ -290,7 +290,8 @@ describe('Topbar request errors', () => {
         fireEvent.click(screen.getByRole('button', {name: 'Topbar.exit.name'}));
 
         await waitFor(() => expect(api.auth.logout).toHaveBeenCalledTimes(1));
-        expect(window.location.replace).toHaveBeenCalledWith('/login');
+        expect(window.location.replace)
+            .toHaveBeenCalledWith('/login?notice=signed-out');
         view.rerender(
             <MemoryRouter
                 initialEntries={['/graphspace/DEFAULT']}

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {Layout, Avatar, Button, Dropdown, message} from 'antd';
+import {Layout, Avatar, Button, Dropdown} from 'antd';
 import {QuestionCircleOutlined, UserOutlined} from '@ant-design/icons';
 import style from './index.module.scss';
 import BrandLockup from '../BrandLockup';
@@ -33,6 +33,9 @@ import {
 } from '../../modules/algorithm/algorithmsForm/algorithmFormPersistence';
 import {useAuthContext} from '../../auth/AuthContext';
 import {isAuthEnabled} from '../../utils/config';
+
+// The logout confirmation is handed to the login page, which survives the redirect.
+const SIGNED_OUT_LOGIN_PATH = '/login?notice=signed-out';
 
 const isUnauthorized = error => {
     return error?.status === 401
@@ -97,8 +100,7 @@ const Topbar = () => {
                     sessionStorage.removeItem('redirect');
                     clearPersistedAlgorithmFormsForUser();
                     user.clearLogin();
-                    message.success(t('Topbar.exit.success'));
-                    window.location.replace('/login');
+                    window.location.replace(SIGNED_OUT_LOGIN_PATH);
                     return;
                 }
                 user.endLogoutTransition();
@@ -108,7 +110,7 @@ const Topbar = () => {
                     user.endLogoutTransition();
                 }
             });
-    }, [t]);
+    }, []);
 
     const userMenu = {
         items: [

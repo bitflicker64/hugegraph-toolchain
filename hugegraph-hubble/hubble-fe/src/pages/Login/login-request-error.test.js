@@ -269,6 +269,35 @@ describe('Login request errors', () => {
     });
 });
 
+test('shows and consumes the logout notice the redirect carries', async () => {
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+    }));
+    const success = jest.spyOn(message, 'success').mockImplementation(() => {});
+    const replaceState = jest.spyOn(window.history, 'replaceState')
+        .mockImplementation(() => {});
+
+    render(
+        <MemoryRouter
+            initialEntries={['/login?notice=signed-out']}
+            future={{
+                v7_relativeSplatPath: true,
+                v7_startTransition: true,
+            }}
+        >
+            <Login />
+        </MemoryRouter>
+    );
+
+    await waitFor(() => expect(success).toHaveBeenCalledWith('Topbar.exit.success'));
+    expect(replaceState).toHaveBeenCalledWith(window.history.state, '', '/login');
+    success.mockRestore();
+    replaceState.mockRestore();
+});
+
 test('shows and consumes the password-change relogin notice', async () => {
     window.matchMedia = jest.fn().mockImplementation(query => ({
         matches: false,

@@ -33,6 +33,12 @@ const DEFAULT_AFTER_LOGIN = '/navigation';
 const UNSAFE_REDIRECT_RE = /[\x00-\x1F\x7F\\]/;
 const LOGIN_NOTICE_PARAM = 'notice';
 const PASSWORD_CHANGED_NOTICE = 'credential-updated';
+const SIGNED_OUT_NOTICE = 'signed-out';
+// Redirect-carried notices, so a message survives the full page load that raised it.
+const NOTICE_MESSAGE_KEYS = new Map([
+    [PASSWORD_CHANGED_NOTICE, 'my.edit.password_changed_relogin'],
+    [SIGNED_OUT_NOTICE, 'Topbar.exit.success'],
+]);
 
 const getSafeRedirect = redirect => {
     if (!redirect || !redirect.startsWith('/') || UNSAFE_REDIRECT_RE.test(redirect)) {
@@ -60,11 +66,14 @@ const Login = () => {
 
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
-        if (searchParams.get(LOGIN_NOTICE_PARAM) !== PASSWORD_CHANGED_NOTICE) {
+        const noticeKey = NOTICE_MESSAGE_KEYS.get(
+            searchParams.get(LOGIN_NOTICE_PARAM)
+        );
+        if (!noticeKey) {
             return;
         }
 
-        message.success(t('my.edit.password_changed_relogin'));
+        message.success(t(noticeKey));
         searchParams.delete(LOGIN_NOTICE_PARAM);
         const nextSearch = searchParams.toString();
         window.history.replaceState(
