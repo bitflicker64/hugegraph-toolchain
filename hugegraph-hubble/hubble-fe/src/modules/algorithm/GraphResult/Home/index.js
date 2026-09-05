@@ -219,9 +219,13 @@ const GraphResult = props => {
     const handleLayoutChange = useCallback(
         layout => {
             graph.destroyLayout();
+            // No align argument. G6's 'center' align re-centres from its own
+            // afterlayout handler with the matrix taken before the layout ran, but the
+            // canvas afterlayout -> fitView handler runs first and replaces that matrix,
+            // so the re-centre translates by a stale delta and pushes nodes off-canvas.
             graph.updateLayout(
                 disableChangeDataRelayout(layout),
-                'center',
+                undefined,
                 undefined,
                 false
             );

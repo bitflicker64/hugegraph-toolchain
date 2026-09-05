@@ -16,12 +16,28 @@
  * under the License.
  */
 
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import GraphResult from './index';
 import GraphAnalysisContext from '../../../Context';
-import {GRAPH_STATUS, GRAPH_RENDER_MODE, PANEL_TYPE} from '../../../../utils/constants';
+import {ALGORITHM_NAME, GRAPH_STATUS, GRAPH_RENDER_MODE, PANEL_TYPE} from '../../../../utils/constants';
 
-jest.mock('../../../component/Graph', () => ({children}) => <div>{children}</div>);
+const mockGraphInstance = {
+    destroyLayout: jest.fn(),
+    updateLayout: jest.fn(),
+};
+
+jest.mock('../../../component/Graph', () => {
+    const {useEffect} = require('react');
+    return props => {
+        useEffect(
+            () => {
+                props.onGraphRender && props.onGraphRender(mockGraphInstance);
+            },
+            [props.onGraphRender]
+        );
+        return <div>{props.children}</div>;
+    };
+});
 jest.mock('../../../component/Legend', () => () => null);
 jest.mock('../../../component/MiniMap', () => () => null);
 jest.mock('../GraphMenuBar', () => () => <div>graph menu</div>);
@@ -32,7 +48,11 @@ jest.mock('../../../component/NumberCard', () => () => null);
 jest.mock('../../../component/EditElement', () => () => null);
 jest.mock('../../../component/Search', () => () => null);
 jest.mock('../../../component/SettingConfigPanel', () => () => null);
-jest.mock('../../../component/layoutConfigPanel/Home', () => () => null);
+jest.mock('../../../component/layoutConfigPanel/Home', () => props => (
+    <button type='button' onClick={() => props.onChange({type: 'circular'})}>
+        change layout
+    </button>
+));
 jest.mock('../../../component/ClosePanelButton', () => () => null);
 jest.mock('../../../component/DynamicAddNode', () => () => null);
 jest.mock('../../../component/DynamicAddEdge', () => () => null);
@@ -88,4 +108,34 @@ test('places empty-graph recovery actions in the graph result area', () => {
         .toHaveAttribute('href', '/graphspace/DEFAULT/graph/hugegraph/meta');
     expect(screen.getByRole('link', {name: 'analysis.algorithm.prepare_data'}))
         .toHaveAttribute('href', '/source');
+});
+
+test('changes the canvas layout without asking G6 to re-centre it', () => {
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <GraphResult
+                data={{vertices: [{id: '1'}], edges: []}}
+                metaData={{edgeMeta: [], vertexMeta: []}}
+                options={{}}
+                algorithm={ALGORITHM_NAME.SHORTEST_PATH}
+                isQueryMode
+                graphNums={{vertexCount: 1, edgeCount: 0}}
+                queryStatus={GRAPH_STATUS.SUCCESS}
+                panelType={PANEL_TYPE.LAYOUT}
+                graphRenderMode={GRAPH_RENDER_MODE.CANVAS2D}
+                onGraphRenderModeChange={jest.fn()}
+                updatePanelType={jest.fn()}
+            />
+        </GraphAnalysisContext.Provider>
+    );
+
+    fireEvent.click(screen.getByRole('button', {name: 'change layout'}));
+
+    expect(mockGraphInstance.destroyLayout).toHaveBeenCalledTimes(1);
+    expect(mockGraphInstance.updateLayout).toHaveBeenCalledTimes(1);
+    const [layoutArg, alignArg] = mockGraphInstance.updateLayout.mock.calls[0];
+    expect(layoutArg).toEqual({type: 'circular', relayoutAtChangeData: false});
+    // 'center' would register a G6 afterlayout re-centre computed from the pre-layout
+    // matrix, which the canvas fitView handler has already replaced by then.
+    expect(alignArg).toBeUndefined();
 });
