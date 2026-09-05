@@ -243,6 +243,38 @@ test('submits a valid create after field validation passes', async () => {
     ));
 });
 
+test('leaves a rejected creation to the single interceptor toast', async () => {
+    api.manage.getSchemaList.mockResolvedValue({status: 200, data: {records: []}});
+    api.manage.addGraph.mockResolvedValue({
+        status: 400,
+        message: "The graph 'DEFAULT-valid_graph' has existed",
+    });
+    const onCancel = jest.fn();
+    const refresh = jest.fn();
+    const messageError = jest.spyOn(message, 'error').mockImplementation(() => undefined);
+    render(
+        <EditLayer
+            visible
+            onCancel={onCancel}
+            refresh={refresh}
+            graphspace='DEFAULT'
+        />
+    );
+
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeEnabled());
+    await userEvent.type(
+        screen.getByPlaceholderText('graph.form.name_placeholder'),
+        'valid_graph'
+    );
+    await userEvent.click(screen.getByRole('button', {name: 'OK'}));
+
+    await waitFor(() => expect(api.manage.addGraph).toHaveBeenCalled());
+    expect(messageError).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+    messageError.mockRestore();
+});
+
 test('submits a valid alias update after field validation passes', async () => {
     api.manage.getGraph.mockResolvedValue({
         status: 200,

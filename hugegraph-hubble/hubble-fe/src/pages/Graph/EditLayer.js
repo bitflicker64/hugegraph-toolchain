@@ -275,7 +275,9 @@ const EditLayer = ({
                 refresh();
                 return;
             }
-            message.error(res.message);
+            // A rejected creation is already reported by the request
+            // interceptor; toasting res.message here stacked a second copy of
+            // the very same message.
         }).catch(error => {
             setLoading(false);
             if (error.graphCreated) {
