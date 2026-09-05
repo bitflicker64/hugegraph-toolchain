@@ -186,16 +186,20 @@ const MemoryUsage = ({label, values, unavailable, t}) => {
                 <strong>{label}</strong>
                 <span>{usedLabel} / {maximumLabel}</span>
             </div>
-            <Progress
-                aria-label={label}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={hasMaximum ? percent : undefined}
-                aria-valuetext={`${usedLabel} / ${maximumLabel}`}
-                percent={percent}
-                showInfo={hasMaximum}
-                strokeColor='var(--workbench-color-brand-strong)'
-            />
+            {/* A JVM without a non-heap ceiling reports max 0: that is a missing
+                maximum, and an empty track would read as 0% of it in use. */}
+            {hasMaximum && (
+                <Progress
+                    aria-label={label}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={percent}
+                    aria-valuetext={`${usedLabel} / ${maximumLabel}`}
+                    percent={percent}
+                    showInfo
+                    strokeColor='var(--workbench-color-brand-strong)'
+                />
+            )}
             {Number.isFinite(Number(values?.committed)) && (
                 <div className='operations-memory-committed'>
                     {metricLabel('committed', t)}: {' '}

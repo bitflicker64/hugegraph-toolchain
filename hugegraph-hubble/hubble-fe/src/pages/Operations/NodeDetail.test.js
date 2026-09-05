@@ -110,7 +110,10 @@ test('focuses standalone Server details on applicable sources and metric cards',
     const heap = within(system).getByRole('progressbar', {name: 'Heap memory usage'});
     expect(heap).toHaveAttribute('aria-valuenow', '50');
     expect(within(system).getByText(/512 MB \/ 1 GB/)).toBeInTheDocument();
+    // Non-heap reports max 0, so the usage stays but no bar claims 0% of it.
     expect(within(system).getByText(/256 MB \/ Unavailable/)).toBeInTheDocument();
+    expect(within(system).queryByRole('progressbar', {name: 'Non-heap memory usage'}))
+        .not.toBeInTheDocument();
     expect(within(system).getByText(/Committed:.*768 MB/)).toBeInTheDocument();
     expect(within(system).queryByText(/NaN|Infinity/)).not.toBeInTheDocument();
 
