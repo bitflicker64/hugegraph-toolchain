@@ -234,6 +234,7 @@ const GlobalAccounts = ({
             title: t('common.operation'),
             width: hasRowMutations ? 170 : 100,
             align: 'center',
+            fixed: 'right',
             render: row => {
                 const menuItems = [
                     canUpdateAccount && {
@@ -366,7 +367,7 @@ const GlobalAccounts = ({
                 pagination={pagination}
                 onChange={handleTable}
                 loading={listLoading}
-                scroll={{x: 1270}}
+                scroll={{x: 'max-content'}}
             />
 
             <EditLayer
