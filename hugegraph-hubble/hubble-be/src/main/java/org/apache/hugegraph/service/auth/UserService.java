@@ -778,12 +778,20 @@ public class UserService extends AuthService {
         login.password(oldpwd);
         try {
             hugeClient.auth().login(login);
-        } catch (Exception e) {
-            return Response.builder()
-                    .status(Constant.STATUS_BAD_REQUEST)
-                    .message(e.getMessage())
-                    .cause(null)
-                    .build();
+        } catch (ServerException e) {
+            /*
+             * A Response built here is written straight to the client: it
+             * never reaches MessageSourceHandler, so the message is never
+             * translated, and it never reaches ExceptionAdvisor.sanitize(),
+             * so a credential the server echoed back would be returned
+             * verbatim. Report the rejection as an exception instead, so
+             * both run, exactly as the login path does.
+             */
+            if (e.status() == 401) {
+                throw new ParameterizedException(
+                          "graph-connection.username-or-password.incorrect");
+            }
+            throw e;
         }
         // Must fetch user first to get the ID, otherwise updateUser sends
         // PUT to the collection path (no {id}) and gets HTTP 405.

@@ -223,6 +223,49 @@ public class UserServiceCompatibilityTest {
     }
 
     @Test
+    public void testRejectedOldPasswordIsReportedThroughTheAdvisor() {
+        ServerException rejected = new ServerException(
+                "Authentication failed, password=hunter2");
+        rejected.status(401);
+        Mockito.when(this.auth.login(Mockito.any())).thenThrow(rejected);
+
+        try {
+            this.service.updatepwd(this.client, "user", "wrong-password",
+                                   "new-password");
+            Assert.fail("Expected the rejected password to be reported");
+        } catch (ParameterizedException e) {
+            /*
+             * A translatable key rather than the upstream text, so
+             * ExceptionAdvisor localizes it and runs sanitize() over the
+             * result. A Response built inside the service reaches neither.
+             */
+            Assert.assertEquals(
+                    "graph-connection.username-or-password.incorrect",
+                    e.getMessage());
+        }
+        Mockito.verify(this.auth, Mockito.never())
+               .updateUser(Mockito.any(User.class));
+    }
+
+    @Test
+    public void testUpstreamPasswordFailureIsNotEchoedAsABody() {
+        ServerException failure = new ServerException(
+                "Failed to connect to 127.0.0.1:8080");
+        failure.status(500);
+        Mockito.when(this.auth.login(Mockito.any())).thenThrow(failure);
+
+        try {
+            this.service.updatepwd(this.client, "user", "old-password",
+                                   "new-password");
+            Assert.fail("Expected the upstream failure to reach the advisor");
+        } catch (ServerException e) {
+            Assert.assertEquals(500, e.status());
+        }
+        Mockito.verify(this.auth, Mockito.never())
+               .updateUser(Mockito.any(User.class));
+    }
+
+    @Test
     public void testCurrentUserIdentityMismatchIsUnauthorized() {
         Mockito.when(this.client.findCurrentUser("user"))
                .thenThrow(new IllegalStateException("mismatch"));
