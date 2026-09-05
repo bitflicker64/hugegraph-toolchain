@@ -22,6 +22,12 @@ import {useTranslation} from 'react-i18next';
 import {FormListAdd, FormListRemove} from '../../../components/FormListAction';
 import {indexTypeOptions} from './config';
 
+// The index row holds four controls inside a 600px modal, so each one gets an
+// explicit width instead of the shared 120px `form_attr_select` width.
+const indexNameStyle = {width: 130};
+const indexTypeStyle = {width: 165};
+const indexFieldsStyle = {width: 145};
+
 const IndexTypeSelect = ({index, value, onChange, onTypeChange}) => {
     const handleChange = useCallback(next => {
         onChange?.(next);
@@ -121,11 +127,13 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                         <Space key={item.name} align='baseline'>
                             <Form.Item
                                 className="form_attr_select"
+                                style={indexNameStyle}
                             >
                                 <Input placeholder={t('schema.index.col.name')} value={item.name} disabled />
                             </Form.Item>
                             <Form.Item
                                 className="form_attr_select"
+                                style={indexTypeStyle}
                             >
                                 <Select
                                     options={indexTypeOptions}
@@ -135,6 +143,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                             </Form.Item>
                             <Form.Item
                                 className="form_attr_select"
+                                style={indexFieldsStyle}
                             >
                                 <Select
                                     value={item.fields}
@@ -173,6 +182,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                     <Space key={field.key} align='baseline'>
                                         <Form.Item
                                             className="form_attr_select"
+                                            style={indexNameStyle}
                                             key={[field.key, 'name']}
                                             name={[field.name, 'name']}
                                         >
@@ -180,12 +190,14 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                         </Form.Item>
                                         <Form.Item
                                             className="form_attr_select"
+                                            style={indexTypeStyle}
                                             name={[field.name, 'type']}
                                         >
                                             <IndexTypeSelect index={index} onTypeChange={setPropertyList} />
                                         </Form.Item>
                                         <Form.Item
                                             className="form_attr_select"
+                                            style={indexFieldsStyle}
                                             name={[field.name, 'fields']}
                                         >
                                             <Select
@@ -222,6 +234,7 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                 <Space key={field.key} align='baseline'>
                                     <Form.Item
                                         className="form_attr_select"
+                                        style={indexNameStyle}
                                         key={[field.key, 'name']}
                                         name={[field.name, 'name']}
                                     >
@@ -229,12 +242,14 @@ const RelatePropertyIndex = ({selectedPropertyList, propertyList, exist, isEdit,
                                     </Form.Item>
                                     <Form.Item
                                         className="form_attr_select"
+                                        style={indexTypeStyle}
                                         name={[field.name, 'type']}
                                     >
                                         <IndexTypeSelect index={index} onTypeChange={setPropertyList} />
                                     </Form.Item>
                                     <Form.Item
                                         className="form_attr_select"
+                                        style={indexFieldsStyle}
                                         name={[field.name, 'fields']}
                                     >
                                         <PropertyFieldsSelect

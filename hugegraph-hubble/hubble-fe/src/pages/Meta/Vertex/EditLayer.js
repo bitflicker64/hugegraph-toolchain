@@ -314,7 +314,12 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
                     <Form.Item label={t('schema.col.label_index')} valuePropName='checked' name='open_label_index'>
                         <Checkbox disabled={!!name} />
                     </Form.Item>
-                    <Form.Item label={t('schema.col.property_indexes')}>
+                    <Form.Item
+                        label={t('schema.col.property_indexes')}
+                        labelCol={{span: 24}}
+                        wrapperCol={{span: 24}}
+                        labelAlign='left'
+                    >
                         <RelatePropertyIndex
                             selectedPropertyList={selectedPropertyList}
                             propertyList={propertyList}
