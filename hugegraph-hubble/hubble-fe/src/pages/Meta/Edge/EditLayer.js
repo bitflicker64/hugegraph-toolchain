@@ -232,8 +232,16 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
                         edgelabel_type: 'NORMAL',
                     }}
                 >
-                    <Form.Item label={t('schema.edge.col.name')} name='name' rules={[rules.required()]}>
-                        <Input placeholder={t('schema.name_placeholder')} disabled={!!name} />
+                    <Form.Item
+                        label={t('schema.edge.col.name')}
+                        name='name'
+                        rules={[rules.required(), rules.isPropertyName, {type: 'string', max: 128}]}
+                    >
+                        <Input
+                            placeholder={t('schema.name_placeholder')}
+                            maxLength={128}
+                            disabled={!!name}
+                        />
                     </Form.Item>
                     <Form.Item label={t('schema.edge.col.type')} name='edgelabel_type' rules={[rules.required()]}>
                         <Radio.Group

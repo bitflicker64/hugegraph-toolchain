@@ -26,6 +26,8 @@ jest.mock('react-i18next', () => ({
     useTranslation: () => ({t: key => key}),
 }));
 
+jest.mock('../../../i18n', () => ({t: key => key}));
+
 jest.mock('../../../api', () => ({
     manage: {
         getMetaVertex: jest.fn(),
@@ -95,4 +97,17 @@ test('creates a vertex label with a default style icon', async () => {
     const payload = api.manage.addMetaVertex.mock.calls[0][2];
     expect(payload.name).toBe('autovertex');
     expect(payload.style.icon).toBe('UserOutlined');
+});
+
+test('rejects an invalid vertex label name before sending it', async () => {
+    renderCreateForm();
+
+    const input = screen.getByPlaceholderText('schema.name_placeholder');
+    expect(input).toHaveAttribute('maxlength', '128');
+    fireEvent.change(input, {target: {value: 'bad name/x'}});
+    fireEvent.click(screen.getByRole('button', {name: 'OK'}));
+
+    await waitFor(() => expect(input.closest('.ant-form-item'))
+        .toHaveTextContent('common.validation.property_name_rule'));
+    expect(api.manage.addMetaVertex).not.toHaveBeenCalled();
 });

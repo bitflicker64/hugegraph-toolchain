@@ -222,8 +222,16 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
                     }}
                     // preserve={false}
                 >
-                    <Form.Item label={t('schema.vertex.col.name')} name='name' rules={[rules.required()]}>
-                        <Input placeholder={t('schema.name_placeholder')} disabled={!!name} />
+                    <Form.Item
+                        label={t('schema.vertex.col.name')}
+                        name='name'
+                        rules={[rules.required(), rules.isPropertyName, {type: 'string', max: 128}]}
+                    >
+                        <Input
+                            placeholder={t('schema.name_placeholder')}
+                            maxLength={128}
+                            disabled={!!name}
+                        />
                     </Form.Item>
                     <Form.Item label={t('schema.vertex.style')}>
                         <Row gutter={[12, 0]}>
