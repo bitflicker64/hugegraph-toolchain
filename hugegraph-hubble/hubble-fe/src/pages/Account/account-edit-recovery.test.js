@@ -542,6 +542,23 @@ test('names the visible labels in account field validation messages', async () =
     expect(api.auth.addUser).not.toHaveBeenCalled();
 });
 
+test('shows the full GraphSpace scope in a super administrator detail', async () => {
+    api.auth.getUserInfo.mockResolvedValue({
+        status: 200,
+        data: {
+            user_name: 'admin',
+            is_superadmin: true,
+            graphspace_permissions: [],
+            adminSpaces: [],
+        },
+    });
+
+    render(<EditLayer {...props} data={{id: 'admin'}} op='detail' />);
+
+    expect(await screen.findByText('account.col.resource_all'))
+        .toBeInTheDocument();
+});
+
 test('shows the derived space administrator level in account details', async () => {
     api.auth.getUserInfo.mockResolvedValue({
         status: 200,

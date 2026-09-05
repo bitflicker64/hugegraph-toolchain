@@ -26,6 +26,7 @@ import FormHelpLabel from '../../components/FormHelpLabel';
 import {accountErrorMessage} from './accountError';
 import {useAuthContext} from '../../auth/AuthContext';
 import {
+    getAccountPreset,
     getAccountPresetLabelKey,
     getPresetSpaces,
     PERMISSION_PRESETS,
@@ -272,7 +273,10 @@ const EditLayer = ({
                                     label={t('account.form.graphspaces')}
                                     className={style.item}
                                 >
-                                    {getPresetSpaces(detail).join(', ')}
+                                    {getAccountPreset(detail)
+                                    === PERMISSION_PRESETS.SUPER_ADMIN
+                                        ? t('account.col.resource_all')
+                                        : getPresetSpaces(detail).join(', ')}
                                 </Form.Item>
                             )}
                             <Form.Item label={t('account.col.create_time')} className={style.item}>
