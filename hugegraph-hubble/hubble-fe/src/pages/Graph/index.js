@@ -397,7 +397,10 @@ const Graph = () => {
             render: val => (val ? moment(val).format('YYYY-MM-DD') : '--'),
         },
         {
-            title: t('graph.detail.update_data'),
+            // `graph.detail.update_data` is the label of the Update Data button on
+            // the graph detail page, not a column title. Fall back to the shared
+            // "Updated At" wording until `graph.col.update_time` is translated.
+            title: t('graph.col.update_time', {defaultValue: t('task.view.update_time')}),
             dataIndex: 'update_time',
             align: 'center',
             width: 140,

@@ -418,6 +418,16 @@ test('falls back to the real GraphSpace name in list mode when alias is empty', 
     expect(await screen.findByText('space-name')).toBeInTheDocument();
 });
 
+test('heads the list mode date column with a noun, not the Update Data action', async () => {
+    render(<Graph />);
+    await screen.findByTestId('graph-card-menu');
+
+    fireEvent.click(screen.getByLabelText('common.label.list_mode'));
+
+    expect(await screen.findByText('graph.col.update_time')).toBeInTheDocument();
+    expect(screen.queryByText('graph.detail.update_data')).not.toBeInTheDocument();
+});
+
 test('keeps the eleven-card image page size fixed without a size selector', async () => {
     api.manage.getGraphList.mockResolvedValue({
         status: 200,
