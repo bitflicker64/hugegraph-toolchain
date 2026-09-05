@@ -51,7 +51,7 @@ import moment from 'moment';
 import GraphCard from './Card';
 import ClearGraphConfirmModal from './ClearGraphConfirmModal';
 import KeyboardAction from '../../components/KeyboardAction';
-import {getResourceDisplayName} from '../../utils/displayName';
+import {getResourceAlias, getResourceDisplayName} from '../../utils/displayName';
 import {sanitizePublicError} from '../../utils/publicError';
 import EditableNicknameCell from './EditableNicknameCell';
 import {TopbarPageContextSlot} from '../../components/Topbar/PageContextSlot';
@@ -321,13 +321,17 @@ const Graph = () => {
                 throw new Error(sanitizePublicError(detail.message, fallbackError));
             }
 
-            const serverNickname = detail.data?.nickname ?? '';
+            // The detail endpoint may echo the graph name instead of the stored
+            // alias, which would silently revert the cell to the plain name. Keep
+            // what was just saved unless the server reports an alias of its own.
+            const serverAlias = getResourceAlias(row.name, detail.data?.nickname ?? '');
+            const savedNickname = serverAlias || nickname;
             setData(current => current.map(item => (
                 item.name === row.name && (item.graphspace || graphspace) === rowGraphspace
-                    ? {...item, ...detail.data, nickname: serverNickname}
+                    ? {...item, ...detail.data, nickname: savedNickname}
                     : item
             )));
-            return serverNickname;
+            return savedNickname;
         }
         catch (error) {
             const errorMessage = error?.response?.data?.message || error?.message;

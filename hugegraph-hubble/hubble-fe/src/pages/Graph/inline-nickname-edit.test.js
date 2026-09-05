@@ -144,6 +144,26 @@ test('updates only nickname through the existing PUT contract and uses its serve
     expect(screen.getByText('movie_graph')).toBeInTheDocument();
 });
 
+test('keeps the saved alias when the read-back echoes the graph name', async () => {
+    api.manage.updateGraph.mockResolvedValue({status: 200});
+    api.manage.getGraph.mockResolvedValue({
+        status: 200,
+        data: {name: 'movie_graph', nickname: 'movie_graph'},
+    });
+    await renderGraph();
+    await openListMode();
+
+    fireEvent.click(screen.getByRole('button', {
+        name: 'common.action.edit graph.form.nickname',
+    }));
+    const input = screen.getByRole('textbox', {name: 'graph.form.nickname'});
+    fireEvent.change(input, {target: {value: 'Movies'}});
+    fireEvent.keyDown(input, {key: 'Enter'});
+
+    expect(await screen.findByText('Movies')).toBeInTheDocument();
+    expect(screen.getByText('movie_graph')).toBeInTheDocument();
+});
+
 test('does not expose inline editing outside the server-authorized GraphSpace scope', async () => {
     mockAuthContext = {
         context: {
