@@ -17,6 +17,7 @@
  */
 
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {ConfigProvider} from 'antd';
 import EditLayer from './EditLayer';
 import * as api from '../../api';
 
@@ -512,8 +513,16 @@ test('keeps a specific account creation error visible in the form', async () => 
     expect(props.onCancel).not.toHaveBeenCalled();
 });
 
+// antd only reaches for its own '${label}' validation templates when a
+// ConfigProvider supplies them, exactly as src/index.js does app-wide. Rendered
+// bare, rc-field-form falls back to its own "'${name}' ..." messages, which name
+// the field whatever messageVariables say.
 test('names the visible labels in account field validation messages', async () => {
-    render(<EditLayer {...props} data={{}} op='create' />);
+    render(
+        <ConfigProvider>
+            <EditLayer {...props} data={{}} op='create' />
+        </ConfigProvider>
+    );
     await act(async () => undefined);
 
     fireEvent.change(screen.getByPlaceholderText(
