@@ -90,7 +90,12 @@ export const integerValidator = (rule, value) => {
 };
 
 export const positiveIntegerValidator = (rule, value) => {
-    if (!_.isNull(value) && !_.isUndefined(value)) {
+    // InputNumber reports null for text it cannot parse, so null means the user
+    // typed something that is not a number. An untouched field stays undefined.
+    if (_.isNull(value)) {
+        return Promise.reject(new Error(validationMessage('positive_integer')));
+    }
+    if (!_.isUndefined(value)) {
         if (value <= 0) {
             return Promise.reject(new Error(validationMessage('positive_integer')));
         }
