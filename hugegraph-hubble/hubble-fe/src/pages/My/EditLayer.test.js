@@ -16,7 +16,7 @@
  * under the License.
  */
 
-import {act, fireEvent, render, screen} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import EditLayer from './EditLayer';
 import * as api from '../../api';
 
@@ -102,8 +102,9 @@ test('reopens the profile modal on the stored values without the abandoned draft
     await act(async () => {
         fireEvent.click(okButton());
     });
-    await flush();
-    expect(document.querySelector('.ant-form-item-has-error')).not.toBeNull();
+    await waitFor(() => expect(
+        document.querySelector('.ant-form-item-has-error')
+    ).not.toBeNull());
 
     view.rerender(<EditLayer {...props} visible={false} />);
     await flush();
@@ -112,5 +113,7 @@ test('reopens the profile modal on the stored values without the abandoned draft
 
     expect(screen.getByDisplayValue('Administrator')).toBeInTheDocument();
     expect(screen.queryByDisplayValue('bad name with spaces')).not.toBeInTheDocument();
-    expect(document.querySelector('.ant-form-item-has-error')).toBeNull();
+    await waitFor(() => expect(
+        document.querySelector('.ant-form-item-has-error')
+    ).toBeNull());
 });
