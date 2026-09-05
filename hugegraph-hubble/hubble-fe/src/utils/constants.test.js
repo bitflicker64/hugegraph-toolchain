@@ -19,6 +19,7 @@
 import {
     ALGORITHM_NAME,
     Algorithm_Layout,
+    Algorithm_Url,
     Async_Task_Manipulations,
     Async_Task_Type,
     Async_Taskt_Status_Name,
@@ -118,5 +119,16 @@ describe('async task constants i18n keys', () => {
         expect(zhConstants.taskTypeNames.gremlin).toBe('Gremlin任务');
         expect(zhConstants.taskStatusNames.queued).toBe('排队中');
         expect(zhConstants.taskManipulations.check_result).toBe('查看结果');
+    });
+});
+
+describe('algorithm catalogue translations', () => {
+    it('translates every OLTP algorithm name shown in the Chinese catalogue', () => {
+        const untranslated = Object.keys(Algorithm_Url).filter(
+            name => getAlgorithmDisplayName(name, zhT)
+                === getAlgorithmDisplayName(name, t)
+        );
+
+        expect(untranslated).toEqual([]);
     });
 });
