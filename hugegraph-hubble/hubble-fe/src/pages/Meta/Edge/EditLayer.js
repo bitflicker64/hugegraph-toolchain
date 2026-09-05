@@ -114,7 +114,7 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
                 return;
             }
 
-            message.error(res.message);
+            // api/request.js already toasts the server message for this failure.
         });
     }, [graphspace, graph, onCancle, refresh, t]);
 
@@ -136,7 +136,7 @@ const EditEdgeLayer = ({visible, onCancle, graphspace, graph, refresh, name, pro
                 return;
             }
 
-            message.error(res.message);
+            // api/request.js already toasts the server message for this failure.
         });
     }, [graph, graphspace, onCancle, refresh, t]);
 

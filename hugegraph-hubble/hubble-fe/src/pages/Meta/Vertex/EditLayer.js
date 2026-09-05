@@ -124,7 +124,7 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
                 return;
             }
 
-            message.error(res.message);
+            // api/request.js already toasts the server message for this failure.
         });
     }, [graph, graphspace, onCancle, refresh, t]);
 
@@ -146,7 +146,7 @@ const EditVertexLayer = ({visible, onCancle, graphspace, graph, refresh, name, p
                 return;
             }
 
-            message.error(res.message);
+            // api/request.js already toasts the server message for this failure.
         });
     }, [graph, graphspace, onCancle, refresh, t]);
 
