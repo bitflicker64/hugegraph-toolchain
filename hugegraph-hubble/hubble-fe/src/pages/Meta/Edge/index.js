@@ -193,9 +193,19 @@ const EdgeTable = ({canWrite = true}) => {
                 <Col>
                     <Space>
                         {canWrite && (
-                            <Button type='primary' onClick={handleCreate}>
-                                {t('common.create')}
-                            </Button>
+                            <Tooltip
+                                title={vertexList.length === 0
+                                    ? t('schema.image_view.edge_prerequisite')
+                                    : ''}
+                            >
+                                <Button
+                                    type='primary'
+                                    onClick={handleCreate}
+                                    disabled={vertexList.length === 0}
+                                >
+                                    {t('common.create')}
+                                </Button>
+                            </Tooltip>
                         )}
                         <Button onClick={handleRefresh}>{t('common.refresh')}</Button>
                         {canWrite && (
