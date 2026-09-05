@@ -177,7 +177,20 @@ export const applyDatasourceTemplate = (form, key) => {
     return template.type;
 };
 
-const normFile = e => {
+// The upload endpoint answers with a business response even when it refuses the
+// file, e.g. {"status":400,"message":"The upload file can't be empty"}. rc-upload
+// only knows its own transport failure, so keep the server's reason instead.
+export const uploadFailureReason = response => (
+    typeof response === 'string' ? response : response?.message ?? ''
+);
+
+// A failed item must not lock the control: the user has to be able to pick another
+// file without deleting the failed row first.
+export const hasUsableUpload = fileList => (
+    fileList.some(item => item.status !== 'error')
+);
+
+export const normFile = e => {
     if (Array.isArray(e)) {
         return e;
     }
@@ -187,19 +200,20 @@ const normFile = e => {
         return null;
     }
 
-    if (fileList[0].status === 'error') {
-        return 'error';
+    const [{status, response}] = fileList;
+    if (status === 'error') {
+        return {status: 'error', message: uploadFailureReason(response)};
     }
 
-    if (fileList[0].status !== 'done') {
+    if (status !== 'done') {
         return null;
     }
 
-    if (fileList[0].response.status !== 200) {
-        return 'error';
+    if (response.status !== 200) {
+        return {status: 'error', message: uploadFailureReason(response)};
     }
 
-    return fileList[0]?.response?.data?.file;
+    return response?.data?.file;
 };
 
 const formatDatasource = values => {
@@ -219,8 +233,18 @@ const UploadForm = ({label, validationLabel, name, accept, extra, required = tru
     const [visible, setVisible] = useState(true);
 
     const handleChange = useCallback(e => {
-        setVisible(e.fileList.length === 0);
-    }, []);
+        const {fileList} = e;
+        for (const item of fileList) {
+            // antd shows `response` in the failed item's tooltip only when it is a
+            // string, and otherwise falls back to rc-upload's internal
+            // "cannot post <api path> 400".
+            if (item.status === 'error') {
+                item.response = uploadFailureReason(item.response)
+                    || t('datasource.form.upload_failed');
+            }
+        }
+        setVisible(!hasUsableUpload(fileList));
+    }, [t]);
 
     return (
         <Form.Item
@@ -229,8 +253,10 @@ const UploadForm = ({label, validationLabel, name, accept, extra, required = tru
                 ...(required ? [requiredUploadRule(t, validationLabel)] : []),
                 () => ({
                     validator(_, value) {
-                        if (value === 'error') {
-                            return Promise.reject(t('datasource.form.upload_failed'));
+                        if (value?.status === 'error') {
+                            return Promise.reject(
+                                value.message || t('datasource.form.upload_failed')
+                            );
                         }
 
                         return Promise.resolve();

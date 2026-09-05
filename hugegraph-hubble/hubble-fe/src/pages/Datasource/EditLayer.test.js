@@ -18,7 +18,7 @@
 import {useCallback, useState} from 'react';
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import EditLayer from './EditLayer';
+import EditLayer, {hasUsableUpload, normFile} from './EditLayer';
 
 jest.mock('react-i18next', () => ({
     initReactI18next: {type: '3rdParty', init: jest.fn()},
@@ -224,4 +224,30 @@ test('ignores a create response after prop-driven modal closure', async () => {
 
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+test('keeps the reason a rejected upload was refused', () => {
+    expect(normFile({
+        fileList: [{
+            status: 'error',
+            response: {status: 400, message: "The upload file can't be empty"},
+        }],
+    })).toEqual({status: 'error', message: "The upload file can't be empty"});
+    expect(normFile({
+        fileList: [{status: 'done', response: {status: 400, message: 'Unsupported'}}],
+    })).toEqual({status: 'error', message: 'Unsupported'});
+    expect(normFile({
+        fileList: [{
+            status: 'done',
+            response: {status: 200, data: {file: '/data/good.csv'}},
+        }],
+    })).toBe('/data/good.csv');
+    expect(normFile({fileList: []})).toBeNull();
+});
+
+test('leaves the upload control usable after a rejected file', () => {
+    expect(hasUsableUpload([{status: 'error'}])).toBe(false);
+    expect(hasUsableUpload([])).toBe(false);
+    expect(hasUsableUpload([{status: 'uploading'}])).toBe(true);
+    expect(hasUsableUpload([{status: 'done'}])).toBe(true);
 });
