@@ -28,12 +28,16 @@ const ScheduleForm = ({prev, visible, datasource, loading}) => {
     const [syncType, setSyncType] = useState(0);
     // console.log(datasource);
     const datasourceType = datasource?.datasource_config?.type;
+    // The ingest API rejects anything but ONCE ("Only ONCE ingest tasks are
+    // currently supported"), so a scheduled task can only be filled in and then
+    // refused on the last step. Offer it the way REALTIME is offered: visible,
+    // disabled, until the backend accepts it.
     const scheduleOptions = datasourceType === 'KAFKA'
         ? [{label: t('task.edit.schedule_realtime'), value: 'REALTIME'}]
         : [
             {label: t('task.edit.schedule_once'), value: 'ONCE'},
             {label: t('task.edit.schedule_realtime'), value: 'REALTIME', disabled: true},
-            {label: t('task.edit.schedule_cron'), value: 'CRON'},
+            {label: t('task.edit.schedule_cron'), value: 'CRON', disabled: true},
         ];
     const showLoadType = syncType === 'CRON'
         && ['KAFKA', 'JDBC'].includes(datasourceType);

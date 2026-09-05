@@ -38,7 +38,9 @@ beforeEach(() => {
     }));
 });
 
-test('shows load type for a scheduled JDBC import', () => {
+test('offers only the sync type the ingest API accepts', () => {
+    // The API rejects every task_schedule_type but ONCE, so a user must not be able
+    // to fill in four steps and only then be told the choice is unsupported.
     render(
         <ScheduleForm
             visible
@@ -48,18 +50,15 @@ test('shows load type for a scheduled JDBC import', () => {
         />
     );
 
+    expect(screen.getByLabelText('task.edit.schedule_once')).toBeEnabled();
+    expect(screen.getByLabelText('task.edit.schedule_realtime')).toBeDisabled();
+    expect(screen.getByLabelText('task.edit.schedule_cron')).toBeDisabled();
+
     fireEvent.click(screen.getByLabelText('task.edit.schedule_cron'));
 
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
-    expect(screen.getByText('task.edit.load_full')).toBeInTheDocument();
-    expect(screen.getByRole('img', {
-        name: 'task.edit.load_type: task.edit.load_type_help',
-    })).toBeInTheDocument();
-    expect(screen.queryByText('task.edit.load_type_help')).not.toBeInTheDocument();
-    expect(screen.getByRole('img', {
-        name: 'task.edit.cron_expression: task.edit.cron_extra',
-    })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('task.edit.cron_placeholder')).toBeInTheDocument();
+    expect(screen.getByLabelText('task.edit.schedule_once')).toBeChecked();
+    expect(screen.queryByPlaceholderText('task.edit.cron_placeholder'))
+        .not.toBeInTheDocument();
 });
 
 test('keeps Run Once as the default for a file import', () => {
