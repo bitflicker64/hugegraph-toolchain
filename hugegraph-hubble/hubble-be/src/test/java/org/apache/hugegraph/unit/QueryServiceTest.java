@@ -227,6 +227,29 @@ public class QueryServiceTest {
     }
 
     @Test
+    public void testCypherFailureNamesCypherRatherThanGremlin()
+           throws Exception {
+        String detail = "Invalid input 'R': expected whitespace";
+        ServerException server = new ServerException(detail);
+        server.status(400);
+        CypherManager cypher = Mockito.mock(CypherManager.class);
+        Mockito.when(cypher.cypher(Mockito.anyString())).thenThrow(server);
+        HugeClient client = this.mockClient(this.mockGremlin());
+        Mockito.when(client.cypher()).thenReturn(cypher);
+        QueryService service = this.serviceWithConfig();
+
+        ExternalException error = (ExternalException)
+                                  Assert.assertThrows(ExternalException.class,
+                                                      () -> {
+            service.executeCypherQuery(client, "MATCH (n RETURN n");
+        });
+
+        Assert.assertEquals(400, error.status());
+        Assert.assertEquals("cypher.execute.failed", error.getMessage());
+        Assert.assertEquals(detail, error.args()[0]);
+    }
+
+    @Test
     public void testAsyncQueriesSeparateUnauthorizedFromHubbleSession()
            throws Exception {
         ServerException server = new ServerException("Unauthorized");

@@ -171,16 +171,16 @@ public class QueryService {
             String exception = e.exception();
             log.error("Cypher execute failed with HTTP status {}", e.status());
             if (ILLEGAL_GREMLIN_EXCEPTIONS.contains(exception)) {
-                throw new IllegalGremlinException("gremlin.illegal-statemnt", e,
+                throw new IllegalGremlinException("cypher.illegal-statement", e,
                         e.message());
             }
-            throw this.serverQueryException(e);
+            throw this.serverQueryException(e, "cypher.execute.failed");
         } catch (ClientException e) {
             Throwable cause = e.getCause();
             if (cause != null) {
                 String message = cause.getMessage();
                 if (message != null && message.startsWith(TIMEOUT_EXCEPTION)) {
-                    throw new InternalException("gremlin.execute.timeout", e,
+                    throw new InternalException("cypher.execute.timeout", e,
                             message);
                 }
                 if (message != null && message.contains(CONN_REFUSED_MSG)) {
@@ -192,7 +192,7 @@ public class QueryService {
         } catch (Exception e) {
             log.error("Cypher execute failed with {}",
                       e.getClass().getSimpleName());
-            throw new ExternalException("gremlin.execute.failed", e,
+            throw new ExternalException("cypher.execute.failed", e,
                     e.getMessage());
         }
     }
@@ -216,7 +216,7 @@ public class QueryService {
         try {
             return client.cypher().executeAsTask(query);
         } catch (ServerException e) {
-            throw this.serverQueryException(e);
+            throw this.serverQueryException(e, "cypher.execute.failed");
         }
     }
 
@@ -295,6 +295,11 @@ public class QueryService {
     }
 
     private ExternalException serverQueryException(ServerException exception) {
+        return this.serverQueryException(exception, "gremlin.execute.failed");
+    }
+
+    private ExternalException serverQueryException(ServerException exception,
+                                                   String failedMessage) {
         int status = exception.status() > 0 ? exception.status() : 400;
         if (status == HttpStatus.UNAUTHORIZED.value()) {
             return new ExternalException(HttpStatus.BAD_GATEWAY.value(),
@@ -315,8 +320,7 @@ public class QueryService {
         if (StringUtils.isBlank(detail)) {
             detail = "HTTP " + status;
         }
-        return new ExternalException(status, "gremlin.execute.failed",
-                                     exception, detail);
+        return new ExternalException(status, failedMessage, exception, detail);
     }
 
     private TypedResult parseResults(ResultSet resultSet) {
