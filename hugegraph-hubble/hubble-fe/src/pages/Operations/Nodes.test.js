@@ -415,6 +415,33 @@ test('merges role into node identity and keeps the full ID explainable and copya
     expect(writeText).toHaveBeenCalledWith('store-c410c1adb107-full-id');
 });
 
+test('applies the declared column widths to the real table element', async () => {
+    getNodes.mockResolvedValue({
+        items: [{
+            id: 'server-wide',
+            name: 'Server with a very long service-reported node name',
+            type: 'SERVER',
+            status: 'UP',
+        }],
+        total: 1,
+        observed_at: 1000,
+        stale: false,
+    });
+
+    const {container} = render(
+        <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+            <Nodes />
+        </MemoryRouter>
+    );
+
+    await screen.findByRole('link', {name: /Server with a very long/});
+    // `.ant-table` is a div in antd 4, so the layout has to reach the <table>.
+    const table = container.querySelector('table');
+    expect(table).toBeInTheDocument();
+    expect(table.style.tableLayout).toBe('fixed');
+    expect(table.style.width).toBe('868px');
+});
+
 test('renders a Store leader-shard count without an explicit node role', async () => {
     getNodes.mockResolvedValue({
         items: [{

@@ -261,6 +261,10 @@ const Nodes = () => {
         {title: t('operations.version'), dataIndex: 'version', key: 'version', width: 104,
             responsive: ['lg'], render: value => value ?? '—'},
     ];
+    // antd 4 renders `.ant-table` as a div, so the column widths only hold once
+    // the real <table> is told to use them; below that width the table scrolls
+    // inside the card instead of widening the whole page.
+    const tableWidth = columns.reduce((total, column) => total + column.width, 0);
 
     return (
         <main className='operations-page operations-nodes'>
@@ -332,6 +336,8 @@ const Nodes = () => {
                     loading={loading}
                     dataSource={data.items}
                     columns={columns}
+                    tableLayout='fixed'
+                    scroll={{x: tableWidth}}
                     onRow={row}
                     onChange={changeTable}
                     pagination={{
