@@ -17,7 +17,7 @@
  */
 
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
-import AnalysisHome, {extractQueryErrorMessage} from './index';
+import AnalysisHome, {buildFavoriteSortParams, extractQueryErrorMessage} from './index';
 import GraphAnalysisContext from '../../Context';
 import * as api from '../../../api';
 
@@ -71,6 +71,9 @@ jest.mock('../LogsDetail/Home', () => props => (
         <span>execution total {props.executionLogsData.total ?? 'pending'}</span>
         <span>favorite total {props.favoriteQueriesData.total ?? 'pending'}</span>
         <button onClick={() => props.onFavoritePageChange(2, 10)}>Go favorite page 2</button>
+        <button onClick={() => props.onSortChange({}, {}, {field: 'name', order: 'ascend'})}>
+            Sort favorites by name
+        </button>
         <span>{props.executionLogsData.records?.[0]?.content}</span>
         {props.executionLogsError && (
             <button onClick={props.onRetryExecutionLogs}>Retry records</button>
@@ -398,4 +401,40 @@ it('keeps a pending favorite page selected instead of rolling back early', async
     });
     expect(screen.getByText('favorite page 2')).toBeInTheDocument();
     expect(api.analysis.fetchFavoriteQueries).toHaveBeenCalledTimes(2);
+});
+
+describe('favorite sort parameters', () => {
+    it('maps the sorted column onto its own order parameter', () => {
+        expect(buildFavoriteSortParams({field: 'name', order: 'ascend'}))
+            .toEqual({name_order: 'asc'});
+        expect(buildFavoriteSortParams({field: 'create_time', order: 'descend'}))
+            .toEqual({time_order: 'desc'});
+        expect(buildFavoriteSortParams({field: ['name'], order: 'descend'}))
+            .toEqual({name_order: 'desc'});
+    });
+
+    it('drops the ordering once the sorter is cleared or unsortable', () => {
+        expect(buildFavoriteSortParams({field: 'name'})).toEqual({});
+        expect(buildFavoriteSortParams({field: 'content', order: 'ascend'}))
+            .toEqual({});
+        expect(buildFavoriteSortParams()).toEqual({});
+    });
+});
+
+it('asks the backend to order favorites by the column that was clicked', async () => {
+    render(
+        <GraphAnalysisContext.Provider value={{graphSpace: 'DEFAULT', graph: 'hugegraph'}}>
+            <AnalysisHome />
+        </GraphAnalysisContext.Provider>
+    );
+    await waitForInitialData();
+
+    fireEvent.click(screen.getByRole('button', {name: 'Sort favorites by name'}));
+
+    await waitFor(() => expect(api.analysis.fetchFavoriteQueries)
+        .toHaveBeenLastCalledWith('DEFAULT', 'hugegraph', expect.objectContaining({
+            name_order: 'asc',
+        })));
+    const calls = api.analysis.fetchFavoriteQueries.mock.calls;
+    expect(calls[calls.length - 1][2]).not.toHaveProperty('time_order');
 });

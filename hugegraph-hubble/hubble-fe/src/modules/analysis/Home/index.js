@@ -40,6 +40,20 @@ const {GREMLIN, CYPHER, TEXT2GQL} = ANALYSIS_TYPE;
 const {CLOSED} = PANEL_TYPE;
 const {CANVAS2D} = GRAPH_RENDER_MODE;
 const defaultPageParams = {page: 1, pageSize: 10};
+// The favorites endpoint orders by name or by time, never by both at once.
+const FAVORITE_SORT_PARAM = {
+    name: 'name_order',
+    create_time: 'time_order',
+};
+
+export const buildFavoriteSortParams = sorter => {
+    const {field, order} = sorter || {};
+    const param = FAVORITE_SORT_PARAM[Array.isArray(field) ? field[0] : field];
+    if (!param || !order) {
+        return {};
+    }
+    return {[param]: order === 'ascend' ? 'asc' : 'desc'};
+};
 const DEFAULT_QUERIES = {
     [GREMLIN]: 'g.V().limit(10)',
     [CYPHER]: 'MATCH (n) RETURN n LIMIT 10',
@@ -102,7 +116,7 @@ const AnalysisHome = () => {
     const [pageFavorite, setFavoritePage] = useState(defaultPageParams.page);
     const [pageSize, setPageSize] = useState(defaultPageParams.pageSize);
     const [search, setSearch] = useState();
-    const [sortMode, setSortMode] = useState();
+    const [favoriteSort, setFavoriteSort] = useState({});
     const [graphRenderMode, setGraphRenderMode] = useState(CANVAS2D);
     const queryRequest = useRef(null);
     const executionInFlight = useRef(false);
@@ -173,7 +187,7 @@ const AnalysisHome = () => {
                 page_size: pageSize,
                 page_no: pageFavorite,
                 content: search,
-                time_order: sortMode,
+                ...favoriteSort,
                 type: FAVORITE_TYPE[analysisMode],
             };
             setFavoriteQueriesLoading(true);
@@ -203,7 +217,7 @@ const AnalysisHome = () => {
                 }
             }
         },
-        [graphSpace, graph, pageSize, pageFavorite, search, sortMode, analysisMode]
+        [graphSpace, graph, pageSize, pageFavorite, search, favoriteSort, analysisMode]
     );
 
     const onFavoriteRefresh = useCallback(
@@ -543,7 +557,7 @@ const AnalysisHome = () => {
     );
 
     const onSortChange = useCallback((pagination, filters, sort) => {
-        setSortMode(sort.order === 'ascend' ? 'asc' : 'desc');
+        setFavoriteSort(buildFavoriteSortParams(sort));
     }, []);
 
     const handleClickLoadContent = useCallback(content => {
